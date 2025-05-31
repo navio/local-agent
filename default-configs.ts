@@ -31,6 +31,45 @@ export const DEFAULT_TOOLS: ToolsJson = {
       "command": "uvx",
       "args": [
         "basic-memory",
+        "run",
+        "--from",
+        "wcgw@latest",
+        "--python",
+        "3.12",
+        "wcgw_mcp"
+      ]
+    },
+    "context-7": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp@latest"
+      ]
+    },
+    "@peng-shawn/mermaid-mcp-server": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@smithery/cli",
+        "run",
+        "@peng-shawn/mermaid-mcp-server",
+        "--key",
+        "2d33ba56-7b28-4ae5-98ae-671912b197d3"
+      ]
+    },
+    "supabase": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase@latest",
+        "--access-token",
+        "sbp_85fe92f91f478a6562dbca02f43724fa6265e5c9"
+      ]
+    },
+    "basic-memory": {
+      "command": "uvx",
+      "args": [
+        "basic-memory",
         "mcp"
       ]
     }

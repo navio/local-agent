@@ -14,7 +14,7 @@ export interface GenerateTextParams {
 }
 
 export const GenerateTextParamsSchema = z.object({
-  model: z.any(), // required
+  model: z.any(),
   tools: z.any().optional(),
   toolChoice: z.string().optional(),
   temperature: z.number().optional(),
