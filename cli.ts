@@ -175,22 +175,21 @@ function runInteractiveSession(config: any, loadedTools: Record<string, any>, se
       // Prefer text, then toolResults (stringified if object), then full result
       let response = "";
       let toolResultObj: any = null;
+      let toolName: string | undefined = undefined;
+      const YELLOW = "\x1b[33m";
+      const RESET = "\x1b[0m";
+
       if (typeof result.text === "string" && result.text.trim() !== "") {
         response = result.text;
       } else if (result.toolResults && Array.isArray(result.toolResults) && result.toolResults.length > 0) {
-        // If any tool result is an object with type "tool-result", auto-summarize
+        // If any tool result is an object with type "tool-result", handle as tool in progress
         toolResultObj = result.toolResults.find(
           (tr) => typeof tr === "object" && tr !== null && tr.type === "tool-result"
         );
-        response = result.toolResults
-          .map((tr) =>
-            typeof tr === "string"
-              ? tr
-              : typeof tr === "object"
-              ? JSON.stringify(tr, null, 2)
-              : String(tr)
-          )
-          .join("\n");
+        if (toolResultObj) {
+          toolName = toolResultObj.toolName || "unknown-tool";
+        }
+        response = ""; // Don't display the raw tool result
       } else {
         // If the result itself is a tool result (rare, but possible)
         if (
@@ -199,36 +198,38 @@ function runInteractiveSession(config: any, loadedTools: Record<string, any>, se
           (result as any).type === "tool-result"
         ) {
           toolResultObj = result;
+          toolName = (result as any).toolName || "unknown-tool";
+          response = "";
+        } else {
+          response = JSON.stringify(result, null, 2);
         }
-        response = JSON.stringify(result, null, 2);
       }
 
       console.log(""); // Add a space between user input and answer
-      console.log(`Agent> ${response}\n`);
-      appendFileSync(sessionFile, `## Agent\n\n${response}\n\n`, "utf8");
 
-      // If a tool result was detected, auto-summarize it with the LLM
-      if (toolResultObj) {
-        // Compose a summary prompt
-        const summaryPrompt = `Summarize the following tool result for the user in natural language:\n\n${JSON.stringify(toolResultObj, null, 2)}`;
-        // Show loading spinner
-        console.log("");
+      if (toolResultObj && toolName) {
+        // Show yellow spinner with tool name until next LLM response
         const spinnerFrames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
         let spinnerIndex = 0;
         const spinnerInterval = setInterval(() => {
           process.stdout.write(
-            `\rAgent> ${spinnerFrames[spinnerIndex]} Thinking...`
+            `\r${YELLOW}Tool [${toolName}] is working... ${spinnerFrames[spinnerIndex]}${RESET}`
           );
           spinnerIndex = (spinnerIndex + 1) % spinnerFrames.length;
         }, 100);
 
+        // Log only the tool used in the memory file
+        appendFileSync(sessionFile, `## Tool Used\n\n${toolName}\n\n`, "utf8");
+
+        // Wait for the next LLM response (by prompting the LLM to continue)
         try {
+          const continuePrompt = `Here is the result of my last action:\n\n${JSON.stringify(toolResultObj, null, 2)}\n\nPlease describe what happened to the user as if you performed the action yourself, in natural language.`;
           const summaryResult = await generateText({
             model: openai(config.model),
-            tools: allTools,
+            // Do NOT include tools here, so the LLM just answers
             temperature: config.temperature,
             system: config.system,
-            prompt: summaryPrompt
+            prompt: continuePrompt
           });
           clearInterval(spinnerInterval);
           process.stdout.clearLine(0);
@@ -251,6 +252,10 @@ function runInteractiveSession(config: any, loadedTools: Record<string, any>, se
           console.error(`[agentech] Error: ${errMsg}`);
           appendFileSync(sessionFile, `## Agent (error)\n\n${errMsg}\n\n`, "utf8");
         }
+      } else if (response.trim() !== "") {
+        // Only print/log the LLM response if not a tool result
+        console.log(`Agent> ${response}\n`);
+        appendFileSync(sessionFile, `## Agent\n\n${response}\n\n`, "utf8");
       }
     } catch (err) {
       spinnerActive = false;
