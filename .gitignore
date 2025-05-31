@@ -1,0 +1,44 @@
+# Node/Bun dependencies
+node_modules/
+bun.lockb
+package-lock.json
+npm-debug.log*
+yarn.lock
+.pnpm-debug.log*
+config.json
+keys.json
+tool.json
+
+memory/
+
+# Build output
+dist/
+build/
+out/
+*.tsbuildinfo
+
+# Environment files
+.env
+.env.*
+
+# VSCode settings
+.vscode/
+.history/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Misc
+memory/
+*.local
+*.swp
+*.swo
