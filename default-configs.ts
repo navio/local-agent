@@ -1,7 +1,7 @@
 import { GenerateTextParams, ToolsJson } from "./types";
 
 /**
- * Default content for config.json (generateText signature)
+ * Default content for localagent.json (generateText signature)
  */
 export const DEFAULT_CONFIG: GenerateTextParams = {
   model: "openai/gpt-4o-mini",
@@ -13,7 +13,7 @@ export const DEFAULT_CONFIG: GenerateTextParams = {
 };
 
 /**
- * Default content for tools.json (mcpServers pattern)
+ * Default content for mcp-tools.json (mcpServers pattern)
  * Only includes filesystem and basic-memory.
  */
 export const DEFAULT_TOOLS: ToolsJson = {

@@ -38,10 +38,10 @@ localagent
 
 ## 🏁 What Happens on First Run?
 
-- Checks for required files: `system.md`, `config.json`, `tools.json`, `keys.json`
+- Checks for required files: `system.md`, `localagent.json`, `mcp-tools.json`, `keys.json`
 - Prompts you to create any missing files (with templates or empty)
 - Creates a `memory/` directory for session logs
-- Loads default and custom MCPs (tools) from `tools.json`, scoped to the current folder/root
+- Loads default and custom MCPs (tools) from `mcp-tools.json`, scoped to the current folder/root
 - Starts an interactive CLI session, using the system prompt and tools defined for the current scope
 
 ---
@@ -50,8 +50,8 @@ localagent
 
 - **system.md**: System prompt and agent instructions, specific to the folder/root.  
   _Set the direction and behavior of the agent for this scope._
-- **config.json**: Agent configuration (name, settings, etc.) for the current root.
-- **tools.json**: List of MCP tools to load (default MCPs are injected if missing), can be tailored per folder/root.  
+- **localagent.json**: Agent configuration (name, settings, etc.) for the current root.
+- **mcp-tools.json**: List of MCP tools to load (default MCPs are injected if missing), can be tailored per folder/root.
   _Choose which tools are available for the agent in this scope._
 - **keys.json**: API keys (e.g., OpenAI) for the current root.
 
@@ -61,7 +61,7 @@ You can edit these files at any time to change agent behavior for the current fo
 
 ## 🧩 Extending with MCPs
 
-Add additional MCPs by editing `tools.json`. Example:
+Add additional MCPs by editing `mcp-tools.json`. Example:
 
 ```json
 [
@@ -102,7 +102,7 @@ All interactions and changes are logged in the `memory/` directory as markdown f
 
 - **Missing files?** The CLI will prompt you to create them.
 - **API key issues?** Add your keys to `keys.json`.
-- **Custom tools not loading?** Check your `tools.json` syntax and module availability.
+- **Custom tools not loading?** Check your `mcp-tools.json` syntax and module availability.
 - **Multi-root confusion?** Each folder/root is independent; ensure you are in the correct directory for your intended agent context.
 
 ---

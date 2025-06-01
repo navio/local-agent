@@ -15,8 +15,8 @@ export function ensureProjectFiles(REQUIRED_FILES: string[], MEMORY_DIR: string)
     if (!existsSync(file)) {
       let content = "";
       if (file === "system.md") content = "";
-      else if (file === "tools.json") content = JSON.stringify(DEFAULT_TOOLS, null, 2);
-      else if (file === "config.json") content = JSON.stringify(DEFAULT_CONFIG, null, 2);
+      else if (file === "mcp-tools.json") content = JSON.stringify(DEFAULT_TOOLS, null, 2);
+      else if (file === "localagent.json") content = JSON.stringify(DEFAULT_CONFIG, null, 2);
       else if (file === "keys.json") content = JSON.stringify(DEFAULT_KEYS, null, 2);
       else if (file.endsWith(".json")) content = "{}";
       writeFileSync(file, content, "utf8");
@@ -44,17 +44,17 @@ export function validateAndLoadFiles(REQUIRED_FILES: string[], MEMORY_DIR: strin
   let keys: KeysJson;
 
   try {
-    config = GenerateTextParamsSchema.parse(JSON.parse(readFileSync("config.json", "utf8")));
+    config = GenerateTextParamsSchema.parse(JSON.parse(readFileSync("localagent.json", "utf8")));
   } catch (err) {
-    console.error("[agentech] Invalid config.json:", err);
+    console.error("[agentech] Invalid localagent.json:", err);
     process.exit(1);
   }
 
   try {
-    const toolsData = JSON.parse(readFileSync("tools.json", "utf8"));
+    const toolsData = JSON.parse(readFileSync("mcp-tools.json", "utf8"));
     tools = ToolsJsonSchema.parse(toolsData);
   } catch (err) {
-    console.error("[agentech] Invalid tools.json:", err);
+    console.error("[agentech] Invalid mcp-tools.json:", err);
     process.exit(1);
   }
 

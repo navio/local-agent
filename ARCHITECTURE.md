@@ -17,16 +17,16 @@
   - Configure it to use the local `memory/` folder for session and memory storage.
 - **@modelcontextprotocol/server-filesystem MCP:**
   - Include and auto-configure with access to the current working directory (the scope of the running application).
-- **Extensibility:** Additional MCPs can be declared in `tools.json`.
-- **Default MCPs in tools.json:** The default MCPs (`basic-memory` and `@modelcontextprotocol/server-filesystem`) must be present in `tools.json`. If they are missing, the loader will inject them automatically to ensure baseline functionality.
+- **Extensibility:** Additional MCPs can be declared in `mcp-tools.json`.
+- **Default MCPs in mcp-tools.json:** The default MCPs (`basic-memory` and `@modelcontextprotocol/server-filesystem`) must be present in `mcp-tools.json`. If they are missing, the loader will inject them automatically to ensure baseline functionality.
 
 ## 4. File/Folder Structure
 
 ```
 /agentech-system/
   ├── system.md
-  ├── config.json
-  ├── tools.json
+  ├── localagent.json
+  ├── mcp-tools.json
   ├── keys.json
   ├── memory/
   └── [cli.ts|cli.js]
@@ -37,7 +37,7 @@
 - On launch, check for required files.
 - If missing, prompt to create (empty or template).
 - Load system, config, tools, and keys.
-- Register default MCPs (basic-memory, server-filesystem) and any in tools.json.
+- Register default MCPs (basic-memory, server-filesystem) and any in mcp-tools.json.
 - Display loaded tools, enter prompt loop.
 - Log all interactions in `memory/` (markdown, session-based).
 - Handle tool approval/authorization as needed.
@@ -53,7 +53,7 @@
 
 ## 7. Extensibility
 
-- Users can add more MCPs via `tools.json`.
+- Users can add more MCPs via `mcp-tools.json`.
 - Future: Tool search, advanced memory, custom LLMs, etc.
 
 ## 8. High-Level Architecture Diagram
@@ -61,10 +61,10 @@
 ```mermaid
 flowchart TD
     Start([Start CLI])
-    CheckFiles{Check for system.md, config.json, tools.json, keys.json}
+    CheckFiles{Check for system.md, localagent.json, mcp-tools.json, keys.json}
     PromptCreate[Prompt user to create missing files]
     LoadFiles[Load system, config, tools, keys]
-    RegisterMCPs[Register default MCPs (basic-memory, server-filesystem) + tools.json MCPs]
+    RegisterMCPs[Register default MCPs (basic-memory, server-filesystem) + mcp-tools.json MCPs]
     CheckKeys{Keys present?}
     PromptKey[Prompt user to provide API key]
     Ready[Display loaded tools, show "Ready"]
@@ -130,7 +130,7 @@ flowchart TD
 3. **Documentation**
    - Update `README.md` with usage instructions:
      - How to install globally or use with `npx`.
-     - How to add custom MCPs via `tools.json`.
+     - How to add custom MCPs via `mcp-tools.json`.
      - How to reset or re-initialize a folder.
 
 4. **Publish**
@@ -148,7 +148,7 @@ flowchart TD
     CheckFiles{Check for required files}
     PromptCreate[Prompt to create missing files]
     LoadConfig[Load config, tools, keys]
-    RegisterMCPs[Register MCPs from tools.json]
+    RegisterMCPs[Register MCPs from mcp-tools.json]
     ShowTools[Display loaded tools]
     StartSession[Create session log in memory/]
     PromptLoop[Start CLI prompt loop]
