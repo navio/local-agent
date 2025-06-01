@@ -1,10 +1,10 @@
 {
-  "name": "localagent",
-  "version": "1.0.0",
+  "name": "local-agent",
+  "version": "0.1.1",
   "description": "A CLI agentic system for orchestrating tools and memory with per-folder scoping",
   "main": "dist/cli.js",
   "bin": {
-    "localagent": "./bin/localagent.js"
+    "localagent": "bin/localagent.js"
   },
   "scripts": {
     "build": "tsc",
@@ -45,11 +45,11 @@
     "memory",
     "ai"
   ],
-  "author": "Your Name",
+  "author": "Alberto Navarro",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/localagent.git"
+    "url": "git+https://github.com/navio/local-agent.git"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -74,5 +74,10 @@
     "bin": {
       "localagent": "cli.ts"
     }
-  }
+  },
+  "types": "./dist/cli.d.ts",
+  "bugs": {
+    "url": "https://github.com/yourusername/localagent/issues"
+  },
+  "homepage": "https://github.com/yourusername/localagent#readme"
 }
