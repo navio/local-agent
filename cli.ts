@@ -30,7 +30,7 @@ Configuration:
      See README.md for examples.
 
   4. To run the CLI:
-     bun cli.ts
+     npx local-agent
 
   The agent will load your configuration and keys, initialize all MCP tools, and start an interactive session.
 
