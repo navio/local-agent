@@ -57,6 +57,10 @@ export const DEFAULT_TOOLS: ToolsJson = {
 };
 
 /**
- * Default content for keys.json (empty object)
+ * Default content for keys.json
+ * Add your API keys here for different providers
  */
-export const DEFAULT_KEYS = {};
+export const DEFAULT_KEYS = {
+  // "openai": "your-openai-api-key-here",
+  // "openrouter": "your-openrouter-api-key-here"
+};

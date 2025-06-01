@@ -215,8 +215,21 @@ To switch between providers or models, simply update the `model` field in your c
 
 - **Using OpenRouter for advanced routing:**
   1. Set `"model": "openrouter/meta-llama/llama-3.1-405b-instruct"` in your config.
-  2. Add your OpenRouter API key to `keys.json` as `OPENROUTER_API_KEY`.
+  2. Add your OpenRouter API key to `keys.json` as `"openrouter": "your-openrouter-api-key-here"`.
   3. Save and restart the agent.
+
+### API Key Configuration
+
+Add the required API keys for each provider in your `keys.json` file:
+
+```json
+{
+  "openai": "your-openai-api-key-here",
+  "openrouter": "your-openrouter-api-key-here",
+  "anthropic": "your-anthropic-api-key-here",
+  "google": "your-google-api-key-here"
+}
+```
 
 ### Requirements
 
@@ -238,7 +251,7 @@ For more details, see the [AI Client Provider Refactor Design Document](AI_CLIEN
 - **local-agent.json**: Agent configuration (name, settings, etc.) for the current root.
 - **mcp-tools.json**: List of MCP tools to load (default MCPs are injected if missing), can be tailored per folder/root.
   _Choose which tools are available for the agent in this scope._
-- **keys.json**: API keys (e.g., OpenAI) for the current root.
+- **keys.json**: API keys for different providers (OpenAI, OpenRouter, Anthropic, Google) for the current root.
 
 You can edit these files at any time to change agent behavior for the current folder.
 

@@ -32,10 +32,15 @@ async function main() {
 
   const agentName = getAgentName(config);
 
-  // Set the OPENAI_API_KEY env var if found in keys.json
+  // Set API keys from keys.json or environment variables
   const openaiApiKey = keys["openai"] || process.env.OPENAI_API_KEY;
   if (openaiApiKey) {
     process.env.OPENAI_API_KEY = openaiApiKey;
+  }
+
+  const openrouterApiKey = keys["openrouter"] || process.env.OPENROUTER_API_KEY;
+  if (openrouterApiKey) {
+    process.env.OPENROUTER_API_KEY = openrouterApiKey;
   }
 
   // Load all MCP tools

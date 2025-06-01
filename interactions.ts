@@ -6,14 +6,25 @@ import { anthropic } from "@ai-sdk/anthropic";
 import { google } from "@ai-sdk/google";
 import { generateText } from "ai";
 // OpenRouter is optional, import if available in your project
-let openrouter: any;
+let openrouter: any = null;
+let openrouterModule: any = null;
 try {
   // @ts-ignore
-  openrouter = require("@openrouter/ai-sdk-provider").createOpenRouter({
-    apiKey: process.env.OPENROUTER_API_KEY || "",
-  });
+  openrouterModule = require("@openrouter/ai-sdk-provider");
 } catch (e) {
-  openrouter = null;
+  openrouterModule = null;
+}
+
+// Function to initialize OpenRouter client with current API key
+function initializeOpenRouter() {
+  if (!openrouterModule) return null;
+  try {
+    return openrouterModule.createOpenRouter({
+      apiKey: process.env.OPENROUTER_API_KEY || "",
+    });
+  } catch (e) {
+    return null;
+  }
 }
 import { logToolUsed, logAgentResponse, logAgentError, logUserPrompt } from "./memory";
 import { YELLOW, RESET } from "./initialization";
@@ -67,7 +78,9 @@ function getClientForProvider(provider: string): ((modelName: string) => any) {
     case "custom":
       throw new Error("The 'custom' provider is not supported: no implementation available in the current SDK.");
     case "openrouter":
-      if (!openrouter) throw new Error("OpenRouter client not available or not configured.");
+      // Initialize OpenRouter client with current API key
+      openrouter = initializeOpenRouter();
+      if (!openrouter) throw new Error("OpenRouter client not available or not configured. Make sure you have the @openrouter/ai-sdk-provider package installed and OPENROUTER_API_KEY set.");
       // OpenRouter supports both chat and completion models, but for simplicity, use .chat for now
       return (modelName: string) => openrouter.chat(modelName);
     default:
