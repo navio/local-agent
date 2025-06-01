@@ -28,7 +28,7 @@ function getAgentName(config: any): string {
 }
 
 async function main() {
-  const { config, tools, keys } = validateAndLoadFiles(REQUIRED_FILES, MEMORY_DIR);
+  const { config, tools, keys } = await validateAndLoadFiles(REQUIRED_FILES, MEMORY_DIR);
 
   const agentName = getAgentName(config);
 
