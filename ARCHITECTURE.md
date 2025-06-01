@@ -18,6 +18,7 @@
 - **@modelcontextprotocol/server-filesystem MCP:**
   - Include and auto-configure with access to the current working directory (the scope of the running application).
 - **Extensibility:** Additional MCPs can be declared in `tools.json`.
+- **Default MCPs in tools.json:** The default MCPs (`basic-memory` and `@modelcontextprotocol/server-filesystem`) must be present in `tools.json`. If they are missing, the loader will inject them automatically to ensure baseline functionality.
 
 ## 4. File/Folder Structure
 
@@ -101,3 +102,64 @@ flowchart TD
 - [@modelcontextprotocol/server-filesystem](https://github.com/modelcontextprotocol/server-filesystem)
 - [agentic MCP tools](https://agentic.so/tools/mcp)
 - [Bun](https://bun.sh/)
+
+---
+
+## 10. Release Process
+
+### Goals
+
+- Users can run `npx localagent` in any folder to initialize or restart the CLI agent.
+- All required files and folders are created or checked on first run.
+- The CLI is published to npm as `localagent`.
+
+### Steps
+
+1. **Prepare for Release**
+   - Ensure `package.json` has a `bin` entry for the CLI (e.g., `"bin": { "localagent": "./cli.js" }`).
+   - Ensure all dependencies are listed and compatible with both Node.js and Bun.
+   - Add a postinstall script if any build steps are needed.
+
+2. **Testing**
+   - Test running `npx localagent` in a fresh folder:
+     - Should prompt to create missing files.
+     - Should initialize `memory/` and required config files.
+     - Should load default and custom MCPs.
+     - Should start the prompt loop and log sessions.
+
+3. **Documentation**
+   - Update `README.md` with usage instructions:
+     - How to install globally or use with `npx`.
+     - How to add custom MCPs via `tools.json`.
+     - How to reset or re-initialize a folder.
+
+4. **Publish**
+   - Run `npm publish` to publish the CLI to npm as `localagent`.
+
+5. **Post-Release**
+   - Monitor for issues.
+   - Encourage users to report bugs or suggest features.
+
+### Initialization & Usage Flow
+
+```mermaid
+flowchart TD
+    User([User runs npx localagent])
+    CheckFiles{Check for required files}
+    PromptCreate[Prompt to create missing files]
+    LoadConfig[Load config, tools, keys]
+    RegisterMCPs[Register MCPs from tools.json]
+    ShowTools[Display loaded tools]
+    StartSession[Create session log in memory/]
+    PromptLoop[Start CLI prompt loop]
+    Exit([User exits CLI])
+
+    User --> CheckFiles
+    CheckFiles -- All present --> LoadConfig
+    CheckFiles -- Missing files --> PromptCreate --> LoadConfig
+    LoadConfig --> RegisterMCPs
+    RegisterMCPs --> ShowTools
+    ShowTools --> StartSession
+    StartSession --> PromptLoop
+    PromptLoop --> Exit
+```
