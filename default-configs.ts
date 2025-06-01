@@ -26,11 +26,11 @@ export const DEFAULT_TOOLS: ToolsJson = {
         process.cwd()
       ]
     },
-    "basic-memory": {
-      "command": "uvx",
+    "memory-bank-mcp": {
+      "command": "npx",
       "args": [
-        "basic-memory",
-        "mcp"
+        "-y",
+        "@aakarsh-sasi/memory-bank-mcp"
       ]
     }
   }
