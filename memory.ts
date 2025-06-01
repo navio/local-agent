@@ -12,6 +12,13 @@ export function createSessionFile(now: Date, toolRow: string, toolStatusMd: stri
 }
 
 /**
+ * Append a user prompt to the session memory file.
+ */
+export function logUserPrompt(sessionFile: string, prompt: string) {
+  appendFileSync(sessionFile, `## User\n\n${prompt}\n\n`, "utf8");
+}
+
+/**
  * Append a tool usage entry to the session memory file.
  */
 export function logToolUsed(sessionFile: string, toolName: string) {
