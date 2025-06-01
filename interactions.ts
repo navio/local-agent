@@ -8,15 +8,32 @@ import { YELLOW, RESET } from "./initialization";
 /**
  * Run the interactive prompt loop for the agent session.
  */
+import { marked } from "marked";
+import TerminalRenderer from "marked-terminal";
+
 export function runInteractiveSession(config: any, loadedTools: Record<string, any>, sessionFile: string, agentName: string) {
+  const BLUE = "\x1b[34m";
+  const RESET = "\x1b[0m";
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
-    prompt: "$>"
+    prompt: `${BLUE}$> ${RESET}`
   });
+
+  // Configure marked to use TerminalRenderer for markdown output
+  marked.setOptions({
+    renderer: new TerminalRenderer()
+  });
+
+  // Remove custom _writeToOutput override to avoid color issues with editing
 
   console.log(`Type your prompt for ${agentName} (Ctrl+C to exit):`);
   rl.prompt();
+  // Set the prompt color for user input (using type assertion for private property)
+  (rl as any)._writeToOutput = function (stringToWrite: string) {
+    // Always write user input in blue
+    ((rl as any).output as NodeJS.WriteStream).write(BLUE + stringToWrite + RESET);
+  };
 
   rl.on("line", async (line) => {
     const prompt = line.trim();
@@ -68,7 +85,9 @@ export function runInteractiveSession(config: any, loadedTools: Record<string, a
       if (typeof result.text === "string" && result.text.trim() !== "") {
         // Normal LLM response
         if (result.text.trim() !== "") {
-          console.log(`${agentName}> ${result.text}\n`);
+          // Render markdown response with agent name in yellow
+          const agentPrefix = `${YELLOW}${agentName}>${RESET} `;
+          console.log(marked(`${agentPrefix}${result.text}\n`));
           logAgentResponse(sessionFile, result.text);
         }
       } else if (result.toolResults && Array.isArray(result.toolResults) && result.toolResults.length > 0) {
@@ -119,7 +138,9 @@ export function runInteractiveSession(config: any, loadedTools: Record<string, a
             summaryResponse = JSON.stringify(summaryResult, null, 2);
           }
           console.log("");
-          console.log(`${agentName}> ${summaryResponse}\n`);
+          // Render markdown summary response with agent name in yellow
+          const agentPrefix = `${YELLOW}${agentName}>${RESET} `;
+          console.log(marked(`${agentPrefix}${summaryResponse}\n`));
           logAgentResponse(sessionFile, summaryResponse);
         } catch (err) {
           clearInterval(toolSpinnerInterval);

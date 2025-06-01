@@ -30,14 +30,9 @@ export const DEFAULT_TOOLS: ToolsJson = {
       "command": "uvx",
       "args": [
         "basic-memory",
-        "run",
-        "--from",
-        "wcgw@latest",
-        "--python",
-        "3.12",
-        "wcgw_mcp"
+        "mcp"
       ]
-    },
+    }
   }
 };
 
