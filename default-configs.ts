@@ -1,7 +1,7 @@
 import { GenerateTextParams, ToolsJson } from "./types";
 
 /**
- * Default content for localagent.json (generateText signature)
+ * Default content for local-agent.json (generateText signature)
  */
 export const DEFAULT_CONFIG: GenerateTextParams = {
   model: "openai/gpt-4o-mini",

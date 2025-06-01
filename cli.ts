@@ -8,7 +8,7 @@ import { existsSync } from "fs";
 
 const REQUIRED_FILES = [
   "system.md",
-  "localagent.json",
+  "local-agent.json",
   "mcp-tools.json",
   "keys.json"
 ];
@@ -19,10 +19,10 @@ function getAgentName(config: any): string {
     return config.name.trim();
   }
   // Fallback: just the parent folder name (no "agent-" prefix)
-  let configPath = "localagent.json";
+  let configPath = "local-agent.json";
   if (!existsSync(configPath)) {
-    // Try to find localagent.json in cwd or subfolders
-    configPath = require.resolve("./localagent.json", { paths: [process.cwd()] });
+    // Try to find local-agent.json in cwd or subfolders
+    configPath = require.resolve("./local-agent.json", { paths: [process.cwd()] });
   }
   return basename(dirname(resolve(configPath)));
 }

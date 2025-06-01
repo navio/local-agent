@@ -39,7 +39,7 @@ export function initializeProjectFiles(REQUIRED_FILES: string[], MEMORY_DIR: str
       let content = "";
       if (file === "system.md") content = "";
       else if (file === "mcp-tools.json") content = JSON.stringify(DEFAULT_TOOLS, null, 2);
-      else if (file === "localagent.json") content = JSON.stringify(DEFAULT_CONFIG, null, 2);
+      else if (file === "local-agent.json") content = JSON.stringify(DEFAULT_CONFIG, null, 2);
       else if (file === "keys.json") content = JSON.stringify(DEFAULT_KEYS, null, 2);
       else if (file.endsWith(".json")) content = "{}";
       writeFileSync(file, content, "utf8");
@@ -97,9 +97,9 @@ export async function validateAndLoadFiles(REQUIRED_FILES: string[], MEMORY_DIR:
   let keys: KeysJson;
 
   try {
-    config = GenerateTextParamsSchema.parse(JSON.parse(readFileSync("localagent.json", "utf8")));
+    config = GenerateTextParamsSchema.parse(JSON.parse(readFileSync("local-agent.json", "utf8")));
   } catch (err) {
-    console.error("[local-agent] Invalid localagent.json:", err);
+    console.error("[local-agent] Invalid local-agent.json:", err);
     process.exit(1);
   }
 

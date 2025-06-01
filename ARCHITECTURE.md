@@ -25,7 +25,7 @@
 ```
 /agentech-system/
   ├── system.md
-  ├── localagent.json
+  ├── local-agent.json
   ├── mcp-tools.json
   ├── keys.json
   ├── memory/
@@ -61,7 +61,7 @@
 ```mermaid
 flowchart TD
     Start([Start CLI])
-    CheckFiles{Check for system.md, localagent.json, mcp-tools.json, keys.json}
+    CheckFiles{Check for system.md, local-agent.json, mcp-tools.json, keys.json}
     PromptCreate[Prompt user to create missing files]
     LoadFiles[Load system, config, tools, keys]
     RegisterMCPs[Register default MCPs (basic-memory, server-filesystem) + mcp-tools.json MCPs]

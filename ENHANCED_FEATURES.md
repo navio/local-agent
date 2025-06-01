@@ -103,7 +103,7 @@ System: Returns to normal prompt
 The enhanced system uses improved prompts and detection logic configured in:
 - `interactions.ts`: Core continuation logic
 - `default-configs.ts`: Enhanced system prompts
-- `localagent.json`: Current configuration
+- `local-agent.json`: Current configuration
 
 ## Technical Implementation
 
