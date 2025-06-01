@@ -1,7 +1,63 @@
 {
-  "name":"localagent",
+  "name": "localagent",
+  "version": "1.0.0",
+  "description": "A CLI agentic system for orchestrating tools and memory with per-folder scoping",
+  "main": "dist/cli.js",
+  "bin": {
+    "localagent": "./bin/localagent.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "build:clean": "rm -rf dist && npm run build",
+    "create-bin": "mkdir -p bin && node scripts/create-bin.js",
+    "prepublishOnly": "npm run build && npm run create-bin",
+    "start": "node dist/cli.js",
+    "start:bun": "bun cli.ts",
+    "dev": "tsx cli.ts",
+    "dev:bun": "bun cli.ts",
+    "test:build": "npm run build && npm run create-bin && echo 'Build completed successfully'",
+    "test:node": "node dist/cli.js",
+    "test:bun": "bun cli.ts",
+    "test:bin": "node bin/localagent.js",
+    "package": "npm pack",
+    "package:test": "npm pack && npm install -g ./localagent-*.tgz",
+    "clean": "rm -rf dist bin node_modules package-lock.json localagent-*.tgz",
+    "reset": "npm run clean && npm install",
+    "setup": "npm install && npm run build && npm run create-bin",
+    "release:prepare": "npm run build:clean && npm run create-bin && npm run package",
+    "release:test": "npm run release:prepare && npm run package:test"
+  },
+  "files": [
+    "dist/**/*",
+    "bin/**/*",
+    "cli.ts",
+    "*.ts",
+    "README.md",
+    "ARCHITECTURE.md",
+    "SCRIPTS.md"
+  ],
+  "keywords": [
+    "cli",
+    "agent",
+    "mcp",
+    "agentic",
+    "tools",
+    "memory",
+    "ai"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/localagent.git"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "devDependencies": {
-    "@types/node": "^22.15.29"
+    "@types/node": "^22.15.29",
+    "typescript": "^5.0.0",
+    "tsx": "^4.0.0"
   },
   "dependencies": {
     "@agentic/ai-sdk": "^7.6.5",
@@ -11,5 +67,10 @@
     "ai": "^4.3.16",
     "dotenv": "^16.5.0",
     "zod": "^3.25.42"
+  },
+  "bun": {
+    "bin": {
+      "localagent": "cli.ts"
+    }
   }
 }

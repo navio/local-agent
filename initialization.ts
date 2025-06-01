@@ -51,7 +51,8 @@ export function validateAndLoadFiles(REQUIRED_FILES: string[], MEMORY_DIR: strin
   }
 
   try {
-    tools = ToolsJsonSchema.parse(JSON.parse(readFileSync("tools.json", "utf8")));
+    const toolsData = JSON.parse(readFileSync("tools.json", "utf8"));
+    tools = ToolsJsonSchema.parse(toolsData);
   } catch (err) {
     console.error("[agentech] Invalid tools.json:", err);
     process.exit(1);

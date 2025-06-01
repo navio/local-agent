@@ -1,3 +1,4 @@
+#!/usr/bin/env bun
 import 'dotenv/config'
 import { validateAndLoadFiles, loadAllMcpTools, GREEN, RED, RESET } from "./initialization";
 import { runInteractiveSession } from "./interactions";
