@@ -1,7 +1,20 @@
 import * as readline from "readline";
 import { createAISDKTools } from "@agentic/ai-sdk";
+// AI model providers
 import { openai } from "@ai-sdk/openai";
+import { anthropic } from "@ai-sdk/anthropic";
+import { google } from "@ai-sdk/google";
 import { generateText } from "ai";
+// OpenRouter is optional, import if available in your project
+let openrouter: any;
+try {
+  // @ts-ignore
+  openrouter = require("@openrouter/ai-sdk-provider").createOpenRouter({
+    apiKey: process.env.OPENROUTER_API_KEY || "",
+  });
+} catch (e) {
+  openrouter = null;
+}
 import { logToolUsed, logAgentResponse, logAgentError, logUserPrompt } from "./memory";
 import { YELLOW, RESET } from "./initialization";
 
@@ -24,6 +37,42 @@ interface TaskContext {
   completedSteps: string[];
   nextSteps: string[];
   isComplete: boolean;
+}
+
+/**
+ * Utility to parse model string and select provider/modelName.
+ * Supports: openai, anthropic, google, openrouter, custom.
+ */
+function parseModelString(modelString: string): { provider: string, modelName: string } {
+  if (!modelString.includes("/")) {
+    // Backward compatibility: treat as openai
+    return { provider: "openai", modelName: modelString };
+  }
+  const [provider, ...rest] = modelString.split("/");
+  return { provider: provider.toLowerCase(), modelName: rest.join("/") };
+}
+
+/**
+ * Returns the correct model function for the provider.
+ */
+function getClientForProvider(provider: string): ((modelName: string) => any) {
+  switch (provider) {
+    case "openai":
+      return openai;
+    case "anthropic":
+      return anthropic;
+    case "google":
+      return google;
+    // "custom" provider is not supported due to missing SDK export
+    case "custom":
+      throw new Error("The 'custom' provider is not supported: no implementation available in the current SDK.");
+    case "openrouter":
+      if (!openrouter) throw new Error("OpenRouter client not available or not configured.");
+      // OpenRouter supports both chat and completion models, but for simplicity, use .chat for now
+      return (modelName: string) => openrouter.chat(modelName);
+    default:
+      throw new Error(`Unsupported AI provider: ${provider}`);
+  }
 }
 
 export function runInteractiveSession(config: any, loadedTools: Record<string, any>, sessionFile: string, agentName: string) {
@@ -204,8 +253,28 @@ CONTEXT AWARENESS:
       // Build the full prompt with conversation context
       const contextualPrompt = prompt + buildConversationContext();
 
+      // Dynamically select provider and model
+      let model;
+      try {
+        const { provider, modelName } = parseModelString(config.model);
+        const client = getClientForProvider(provider);
+        model = client(modelName);
+      } catch (err) {
+        spinnerActive = false;
+        clearInterval(spinnerInterval);
+        process.stdout.clearLine(0);
+        process.stdout.cursorTo(0);
+        const errMsg = err instanceof Error ? err.message : String(err);
+        console.error(`Error: ${errMsg}`);
+        logAgentError(sessionFile, errMsg);
+        if (!isAutoContinuation) {
+          rl.prompt();
+        }
+        return;
+      }
+
       const result = await generateText({
-        model: openai(config.model),
+        model,
         tools: allTools,
         temperature: config.temperature,
         system: enhancedSystemPrompt,
@@ -261,8 +330,23 @@ CONTEXT AWARENESS:
 
         try {
           const continuePrompt = `Here is the result of my last action:\n\n${JSON.stringify(toolResultObj, null, 2)}\n\nPlease describe what happened to the user as if you performed the action yourself, in natural language. If this is part of a multi-step task and more work is needed to complete the overall goal, continue with the next logical step without waiting for user input.`;
+          // Use the same dynamic model selection for summary
+          let summaryModel;
+          try {
+            const { provider, modelName } = parseModelString(config.model);
+            const client = getClientForProvider(provider);
+            summaryModel = client(modelName);
+          } catch (err) {
+            clearInterval(toolSpinnerInterval);
+            process.stdout.clearLine(0);
+            process.stdout.cursorTo(0);
+            const errMsg = err instanceof Error ? err.message : String(err);
+            console.error(`Error: ${errMsg}`);
+            logAgentError(sessionFile, errMsg);
+            return;
+          }
           const summaryResult = await generateText({
-            model: openai(config.model),
+            model: summaryModel,
             temperature: config.temperature,
             system: enhancedSystemPrompt,
             prompt: continuePrompt + buildConversationContext()

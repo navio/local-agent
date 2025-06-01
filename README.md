@@ -46,6 +46,191 @@ local-agent
 
 ---
 
+---
+## 🤖 Model Provider Selection & Usage
+
+local-agent supports multiple AI model providers via the [ai-sdk](https://ai-sdk.dev/docs/introduction) ecosystem. You can select and use different models by specifying the provider and model in your configuration.
+
+### Supported Providers
+
+- **OpenAI** (`@ai-sdk/openai`)
+- **Anthropic** (`@ai-sdk/anthropic`)
+- **Google** (`@ai-sdk/google`)
+- **OpenRouter** (`@openrouter/ai-sdk-provider`)
+
+> **Note:** "Custom" models are not currently supported due to SDK limitations.
+
+### How to Select a Model
+
+Set the `model` field in your configuration (e.g., `local-agent.json`) to a string in the format:
+
+```
+provider/model-name
+```
+
+- `provider`: The AI provider to use (e.g., `openai`, `anthropic`, `google`, `openrouter`)
+- `model-name`: The specific model for that provider
+
+#### Examples
+
+##### OpenAI
+
+```json
+{
+  "model": "openai/gpt-4o-mini"
+---
+## 🧩 Adding and Using MCP Tools
+
+local-agent is designed to be highly extensible through Model Context Protocol (MCP) tools. MCP tools provide additional capabilities (such as file system access, memory, or custom APIs) and are loaded per project scope (the folder where you invoke the agent).
+
+### How MCP Tools Work
+
+- **Per-Scope Loading:** When you run `local-agent` in a folder, it loads MCP tools defined in that folder's configuration. Each folder/root can have its own set of tools, system prompt, and settings.
+- **Initialization:** On first run, the agent will prompt you to create missing configuration files, including `mcp-tools.json`, and will initialize the folder with sensible defaults.
+- **Isolation:** Each agent instance operates only within the folder where it was started, using only the tools and context defined there.
+
+### Adding MCP Tools
+
+To add or customize MCP tools for your project:
+
+1. Open (or create) the `mcp-tools.json` file in your project root.
+2. Add tool definitions as objects in a JSON array.
+
+#### Example: Basic MCP Tools Configuration
+
+```json
+[
+  {
+    "name": "basic-memory",
+    "module": "basic-memory",
+    "options": { "memoryDir": "memory" }
+  },
+  {
+    "name": "server-filesystem",
+    "module": "@modelcontextprotocol/server-filesystem",
+    "options": { "accessPath": "." }
+  }
+]
+```
+
+- **basic-memory:** Provides session memory and logging.
+- **server-filesystem:** Allows the agent to read/write files in the current folder.
+
+#### Example: Adding a Custom Tool
+
+```json
+[
+  {
+    "name": "basic-memory",
+    "module": "basic-memory",
+    "options": { "memoryDir": "memory" }
+  },
+  {
+    "name": "server-filesystem",
+    "module": "@modelcontextprotocol/server-filesystem",
+    "options": { "accessPath": "." }
+  },
+  {
+    "name": "my-custom-api",
+    "module": "my-custom-mcp-module",
+    "options": { "apiKey": "YOUR_API_KEY" }
+  }
+]
+```
+
+- Add your own MCP tool by specifying its `name`, `module`, and any required `options`.
+
+### Key Features of Per-Scope Agents
+
+- **Scoped Context:** Each agent instance is fully isolated to the folder where it is invoked. All memory, tools, and configuration are local to that folder.
+- **Automatic Initialization:** On first run, the agent will create missing config files (`system.md`, `local-agent.json`, `mcp-tools.json`, `keys.json`) and initialize the folder for you.
+- **Customizable:** You can tailor the agent's tools, system prompt, and settings for each project or folder independently.
+- **Safe by Default:** The agent cannot access files or tools outside the current scope unless explicitly configured.
+
+### Practical Workflow
+
+1. **Initialize a new project folder:**
+   ```sh
+   mkdir my-project
+   cd my-project
+   npx local-agent
+   ```
+   - The agent will prompt you to create configuration files if they are missing.
+
+2. **Customize your tools:**
+   - Edit `mcp-tools.json` to add, remove, or configure MCP tools as needed.
+
+3. **Run the agent:**
+   - All actions, memory, and tools are scoped to the current folder.
+
+For more details on available MCP tools and advanced configuration, see the [ARCHITECTURE.md](ARCHITECTURE.md) and [AI_CLIENT_PROVIDER_REFACTOR.md](AI_CLIENT_PROVIDER_REFACTOR.md) documents.
+
+---
+}
+```
+- Uses OpenAI as the provider with the `gpt-4o-mini` model.
+
+##### Anthropic
+
+```json
+{
+  "model": "anthropic/claude-3-5-sonnet-latest"
+}
+```
+- Uses Anthropic as the provider with the `claude-3-5-sonnet-latest` model.
+
+##### Google
+
+```json
+{
+  "model": "google/models/gemini-2.0-flash-exp"
+}
+```
+- Uses Google as the provider with the `gemini-2.0-flash-exp` model.
+
+##### OpenRouter
+
+```json
+{
+  "model": "openrouter/meta-llama/llama-3.1-405b-instruct"
+}
+```
+- Uses OpenRouter as the provider with the `meta-llama/llama-3.1-405b-instruct` model.
+
+### How to Switch Models
+
+To switch between providers or models, simply update the `model` field in your configuration to the desired provider/model string as shown above. No code changes are required.
+
+### Practical Usage Scenarios
+
+- **Switching from OpenAI to Anthropic:**
+  1. Open your `local-agent.json` config.
+  2. Change `"model": "openai/gpt-4o-mini"` to `"model": "anthropic/claude-3-5-sonnet-latest"`.
+  3. Save and restart the agent.
+
+- **Using Google Gemini:**
+  1. Set `"model": "google/models/gemini-2.0-flash-exp"` in your config.
+  2. Ensure you have the correct API keys for Google in your `keys.json`.
+  3. Save and restart the agent.
+
+- **Using OpenRouter for advanced routing:**
+  1. Set `"model": "openrouter/meta-llama/llama-3.1-405b-instruct"` in your config.
+  2. Add your OpenRouter API key to `keys.json` as `OPENROUTER_API_KEY`.
+  3. Save and restart the agent.
+
+### Requirements
+
+- Ensure the relevant provider's package is installed (see `package.json`).
+- Add the required API keys for each provider in your `keys.json` file.
+
+### Troubleshooting
+
+- If you see errors about missing modules, run `npm install` to ensure all dependencies are installed.
+- If you see errors about missing API keys, add them to your `keys.json` file.
+
+For more details, see the [AI Client Provider Refactor Design Document](AI_CLIENT_PROVIDER_REFACTOR.md).
+
+---
 ## ⚙️ Configuration
 
 - **system.md**: System prompt and agent instructions, specific to the folder/root.  
