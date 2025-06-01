@@ -4,9 +4,9 @@ import { writeFileSync, appendFileSync } from "fs";
  * Create a new session memory file and write the session header.
  * Returns the session file path.
  */
-export function createSessionFile(now: Date, toolRow: string, toolStatusMd: string): string {
+export function createSessionFile(now: Date, toolRow: string, toolStatusMd: string, agentName: string): string {
   const sessionFile = `memory/session-${now.toISOString().replace(/[:.]/g, "-")}.md`;
-  let header = `# Agentech Session – ${now.toLocaleString()}\n\n${toolRow}\n\n## Tools Loaded\n\n${toolStatusMd}\n`;
+  let header = `# ${agentName} Session – ${now.toLocaleString()}\n\n${toolRow}\n\n## Tools Loaded\n\n${toolStatusMd}\n`;
   writeFileSync(sessionFile, header, "utf8");
   return sessionFile;
 }

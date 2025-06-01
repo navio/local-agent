@@ -2,6 +2,8 @@ import 'dotenv/config'
 import { validateAndLoadFiles, loadAllMcpTools, GREEN, RED, RESET } from "./initialization";
 import { runInteractiveSession } from "./interactions";
 import { createSessionFile } from "./memory";
+import { dirname, basename, resolve } from "path";
+import { existsSync } from "fs";
 
 const REQUIRED_FILES = [
   "system.md",
@@ -11,9 +13,23 @@ const REQUIRED_FILES = [
 ];
 const MEMORY_DIR = "memory";
 
+function getAgentName(config: any): string {
+  if (config.name && typeof config.name === "string" && config.name.trim() !== "") {
+    return config.name.trim();
+  }
+  // Fallback: just the parent folder name (no "agent-" prefix)
+  let configPath = "config.json";
+  if (!existsSync(configPath)) {
+    // Try to find config.json in cwd or subfolders
+    configPath = require.resolve("./config.json", { paths: [process.cwd()] });
+  }
+  return basename(dirname(resolve(configPath)));
+}
+
 async function main() {
-  console.log("Agentech System CLI");
   const { config, tools, keys } = validateAndLoadFiles(REQUIRED_FILES, MEMORY_DIR);
+
+  const agentName = getAgentName(config);
 
   // Set the OPENAI_API_KEY env var if found in keys.json
   const openaiApiKey = keys["openai"] || process.env.OPENAI_API_KEY;
@@ -35,6 +51,7 @@ async function main() {
       )
       .join(", ") +
     "]";
+  console.log(`${agentName} CLI`);
   console.log(toolRow);
 
   // Prepare session memory log file
@@ -48,10 +65,10 @@ async function main() {
     }
   }
   toolStatusMd += "\n";
-  const sessionFile = createSessionFile(now, toolRow, toolStatusMd);
+  const sessionFile = createSessionFile(now, toolRow, toolStatusMd, agentName);
 
   // Pass all loaded tools to the session
-  runInteractiveSession(config, loadedTools, sessionFile);
+  runInteractiveSession(config, loadedTools, sessionFile, agentName);
 }
 
 main();

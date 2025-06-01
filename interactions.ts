@@ -8,14 +8,14 @@ import { YELLOW, RESET } from "./initialization";
 /**
  * Run the interactive prompt loop for the agent session.
  */
-export function runInteractiveSession(config: any, loadedTools: Record<string, any>, sessionFile: string) {
+export function runInteractiveSession(config: any, loadedTools: Record<string, any>, sessionFile: string, agentName: string) {
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
-    prompt: "You> "
+    prompt: "$>"
   });
 
-  console.log("Type your prompt (Ctrl+C to exit):");
+  console.log(`Type your prompt for ${agentName} (Ctrl+C to exit):`);
   rl.prompt();
 
   rl.on("line", async (line) => {
@@ -38,7 +38,7 @@ export function runInteractiveSession(config: any, loadedTools: Record<string, a
     let spinnerActive = true;
     const spinnerInterval = setInterval(() => {
       process.stdout.write(
-        `\rAgent> ${spinnerFrames[spinnerIndex]} Thinking...`
+        `\r${spinnerFrames[spinnerIndex]} Thinking...`
       );
       spinnerIndex = (spinnerIndex + 1) % spinnerFrames.length;
     }, 100);
@@ -68,7 +68,7 @@ export function runInteractiveSession(config: any, loadedTools: Record<string, a
       if (typeof result.text === "string" && result.text.trim() !== "") {
         // Normal LLM response
         if (result.text.trim() !== "") {
-          console.log(`Agent> ${result.text}\n`);
+          console.log(`${agentName}> ${result.text}\n`);
           logAgentResponse(sessionFile, result.text);
         }
       } else if (result.toolResults && Array.isArray(result.toolResults) && result.toolResults.length > 0) {
@@ -119,14 +119,14 @@ export function runInteractiveSession(config: any, loadedTools: Record<string, a
             summaryResponse = JSON.stringify(summaryResult, null, 2);
           }
           console.log("");
-          console.log(`Agent> ${summaryResponse}\n`);
+          console.log(`${agentName}> ${summaryResponse}\n`);
           logAgentResponse(sessionFile, summaryResponse);
         } catch (err) {
           clearInterval(toolSpinnerInterval);
           process.stdout.clearLine(0);
           process.stdout.cursorTo(0);
           const errMsg = err instanceof Error ? err.message : String(err);
-          console.error(`[agentech] Error: ${errMsg}`);
+          console.error(`Error: ${errMsg}`);
           logAgentError(sessionFile, errMsg);
         }
       }
@@ -136,7 +136,7 @@ export function runInteractiveSession(config: any, loadedTools: Record<string, a
       process.stdout.clearLine(0);
       process.stdout.cursorTo(0);
       const errMsg = err instanceof Error ? err.message : String(err);
-      console.error(`[agentech] Error: ${errMsg}`);
+      console.error(`Error: ${errMsg}`);
       logAgentError(sessionFile, errMsg);
     }
 

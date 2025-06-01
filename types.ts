@@ -4,6 +4,7 @@ import { z } from "zod";
  * Type for generateText config, based on ai SDK usage.
  */
 export interface GenerateTextParams {
+  name?: string;
   model: any; // e.g., openai('gpt-4o-mini')
   tools?: any;
   toolChoice?: string;
@@ -14,6 +15,7 @@ export interface GenerateTextParams {
 }
 
 export const GenerateTextParamsSchema = z.object({
+  name: z.string().optional(),
   model: z.any(),
   tools: z.any().optional(),
   toolChoice: z.string().optional(),
