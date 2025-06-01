@@ -120,13 +120,18 @@ CONTEXT AWARENESS:
       'created folder', 'created directory', 'made folder',
       'next step', 'continue', 'now i will', 'now i need to',
       'partially complete', 'still need', 'remaining',
-      'created basic', 'initial setup', 'first step'
+      'created basic', 'initial setup', 'first step',
+      'proceeding', 'moving on', 'next logical step',
+      'will now', 'let me', 'i will create', 'i will add',
+      'setting up', 'configuring', 'installing'
     ];
     
     const completionIndicators = [
       'task complete', 'finished', 'done', 'ready to use',
       'fully functional', 'all files created', 'project is complete',
-      'successfully created', 'everything is set up'
+      'successfully created', 'everything is set up',
+      'application is now ready', 'setup is complete',
+      'all necessary files', 'ready to run'
     ];
     
     const lowerResponse = response.toLowerCase();
@@ -135,6 +140,15 @@ CONTEXT AWARENESS:
     if (completionIndicators.some(indicator => lowerResponse.includes(indicator))) {
       currentTaskContext.isComplete = true;
       return false;
+    }
+    
+    // Special logic for specific tools that typically indicate continuation
+    if (toolUsed) {
+      const continuationTools = ['create_directory', 'write_file'];
+      if (continuationTools.some(tool => toolUsed.includes(tool))) {
+        // If we just created a directory or wrote a file, likely need to continue
+        return true;
+      }
     }
     
     // Check for continuation indicators
@@ -286,11 +300,10 @@ CONTEXT AWARENESS:
 
           // Check if we should continue the task automatically
           if (shouldContinueTask(assistantResponse, toolName)) {
-            console.log(`\n${YELLOW}Continuing with next step...${RESET}\n`);
-            // Continue with the task automatically
-            setTimeout(() => {
-              processUserInput("Continue with the next step of the current task", true);
-            }, 1000);
+            console.log(`\n${YELLOW}Task continuation detected. Press Enter to continue or modify the prompt:${RESET}`);
+            // Pre-populate the readline with continuation prompt
+            rl.write("continue");
+            rl.prompt();
             return;
           }
           
@@ -312,10 +325,10 @@ CONTEXT AWARENESS:
 
         // Check if we should continue the task automatically
         if (shouldContinueTask(assistantResponse)) {
-          console.log(`\n${YELLOW}Continuing with next step...${RESET}\n`);
-          setTimeout(() => {
-            processUserInput("Continue with the next step of the current task", true);
-          }, 1000);
+          console.log(`\n${YELLOW}Task continuation detected. Press Enter to continue or modify the prompt:${RESET}`);
+          // Pre-populate the readline with continuation prompt
+          rl.write("continue");
+          rl.prompt();
           return;
         }
       }
