@@ -1,6 +1,43 @@
 #!/usr/bin/env bun
 import 'dotenv/config'
 import { validateAndLoadFiles, loadAllMcpTools, GREEN, RED, RESET } from "./initialization";
+
+// Help option: show usage and config instructions if -h or --help is present
+if (process.argv.includes('-h') || process.argv.includes('--help')) {
+  console.log(`
+Usage: bun cli.ts [options]
+
+This CLI launches the agent with your configured tools and keys.
+
+Options:
+  -h, --help        Show this help message
+
+Configuration:
+  1. Place the following files in the project root:
+     - system.md           (system prompt and instructions)
+     - local-agent.json    (agent configuration)
+     - mcp-tools.json      (MCP tool definitions)
+     - keys.json           (API keys for providers)
+
+  2. Edit keys.json to include your API keys:
+     {
+       "openai": "sk-...",
+       "openrouter": "or-...",
+       // Add other provider keys as needed
+     }
+
+  3. Edit mcp-tools.json to define your MCP tools.
+     See README.md for examples.
+
+  4. To run the CLI:
+     bun cli.ts
+
+  The agent will load your configuration and keys, initialize all MCP tools, and start an interactive session.
+
+For more details, see README.md.
+`);
+  process.exit(0);
+}
 import { runInteractiveSession } from "./interactions";
 import { createSessionFile } from "./memory";
 import { dirname, basename, resolve } from "path";
