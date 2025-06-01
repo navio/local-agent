@@ -1,6 +1,9 @@
 /**
- * All log messages use the prefix [local-agent] to match the project name.
- * (Changed from [agentech] for consistency and clarity.)
+ * @fileoverview
+ * Initialization utilities for the local agent project.
+ * Handles validation and creation of required configuration files, memory directory,
+ * and loading of Model Context Protocol (MCP) tools for agent operation.
+ * All log messages use the prefix [local-agent] for consistency and clarity.
  */
 import { existsSync, mkdirSync, writeFileSync, readFileSync } from "fs";
 import { DEFAULT_CONFIG, DEFAULT_TOOLS, DEFAULT_KEYS } from "./default-configs";
@@ -14,8 +17,11 @@ import {
 import { createMcpTools } from "@agentic/mcp";
 
 /**
- * Checks for missing required files and memory directory.
- * Returns an array of missing items (files and/or the memory directory).
+ * Checks for missing required files and the memory directory in the project.
+ *
+ * @param {string[]} REQUIRED_FILES - List of required file names to check for existence.
+ * @param {string} MEMORY_DIR - Name of the memory directory to check.
+ * @returns {string[]} Array of missing items (file names and/or the memory directory).
  */
 export function getMissingProjectFiles(REQUIRED_FILES: string[], MEMORY_DIR: string): string[] {
   const missing: string[] = [];
@@ -31,7 +37,11 @@ export function getMissingProjectFiles(REQUIRED_FILES: string[], MEMORY_DIR: str
 }
 
 /**
- * Actually creates the missing files and memory directory.
+ * Creates any missing required files and the memory directory for the project.
+ * Populates files with default content where appropriate.
+ *
+ * @param {string[]} REQUIRED_FILES - List of required file names to create if missing.
+ * @param {string} MEMORY_DIR - Name of the memory directory to create if missing.
  */
 export function initializeProjectFiles(REQUIRED_FILES: string[], MEMORY_DIR: string) {
   for (const file of REQUIRED_FILES) {
@@ -59,8 +69,13 @@ import * as readline from "readline";
  * Exits if user declines initialization or after initializing.
  */
 /**
- * Checks for missing files/dirs, prompts user to initialize if needed, and loads config/tools/keys.
- * Exits if user declines initialization or after initializing.
+ * Validates the presence of all required files and the memory directory.
+ * If any are missing, prompts the user to initialize the project and exits if declined.
+ * Loads and parses the agent configuration, MCP tools, and API keys from their respective files.
+ *
+ * @param {string[]} REQUIRED_FILES - List of required file names.
+ * @param {string} MEMORY_DIR - Name of the memory directory.
+ * @returns {Promise<{ config: any, tools: any, keys: any }>} Parsed configuration, tools, and keys.
  */
 export async function validateAndLoadFiles(REQUIRED_FILES: string[], MEMORY_DIR: string) {
   const missing = getMissingProjectFiles(REQUIRED_FILES, MEMORY_DIR);
@@ -127,13 +142,17 @@ export const YELLOW = "\x1b[33m";
 export const RESET = "\x1b[0m";
 
 /**
- * Attempt to load all MCP tools from tools.json.
- * Returns: { loadedTools: Record<string, any>, toolStatus: Array<{name: string, status: "success"|"fail", error?: string}> }
+ * Loads all Model Context Protocol (MCP) tools defined in the tools configuration.
+ * Returns an object containing the loaded tools and a status array for each tool.
+ *
+ * @param {any} toolsConfig - The parsed tools configuration object (from mcp-tools.json).
+ * @returns {Promise<{ loadedTools: Record<string, any>, toolStatus: Array<{name: string, status: "success"|"fail", error?: string}> }>}
+ *   An object with loaded MCP tools and their load status.
  */
 export async function loadAllMcpTools(toolsConfig: any) {
   const loadedTools: Record<string, any> = {};
   const toolStatus: Array<{ name: string; status: "success" | "fail"; error?: string }> = [];
-
+ 
   for (const [name, serverProcess] of Object.entries(toolsConfig.mcpServers || {})) {
     try {
       const tool = await createMcpTools({

@@ -1,4 +1,14 @@
 #!/usr/bin/env bun
+/**
+ * @fileoverview
+ * Command-line interface for launching the local agent with configured tools and API keys.
+ * This CLI loads configuration files, initializes all Model Context Protocol (MCP) tools,
+ * and starts an interactive session for agent operations.
+ *
+ * Usage: bun cli.ts [options]
+ *
+ * For configuration and usage details, see README.md.
+ */
 import 'dotenv/config'
 import { validateAndLoadFiles, loadAllMcpTools, GREEN, RED, RESET } from "./initialization";
 
@@ -51,6 +61,13 @@ const REQUIRED_FILES = [
 ];
 const MEMORY_DIR = "memory";
 
+/**
+ * Determines the agent's display name based on the configuration.
+ * If a name is specified in the config, it is used. Otherwise, falls back to the parent folder name.
+ *
+ * @param {any} config - The agent configuration object, expected to have a 'name' property.
+ * @returns {string} The resolved agent name for display and logging.
+ */
 function getAgentName(config: any): string {
   if (config.name && typeof config.name === "string" && config.name.trim() !== "") {
     return config.name.trim();
@@ -64,6 +81,13 @@ function getAgentName(config: any): string {
   return basename(dirname(resolve(configPath)));
 }
 
+/**
+ * Main entry point for the CLI.
+ * Loads configuration files, sets up API keys, initializes all MCP tools,
+ * prepares the session memory log, and starts the interactive agent session.
+ *
+ * This function is asynchronous and is invoked immediately at the end of the script.
+ */
 async function main() {
   const { config, tools, keys } = await validateAndLoadFiles(REQUIRED_FILES, MEMORY_DIR);
 

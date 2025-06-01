@@ -1,3 +1,10 @@
+// interactions.ts
+/**
+ * @fileoverview
+ * Provides the interactive session loop and supporting utilities for the local agent.
+ * Handles user prompts, conversation context, multi-step task management, and dynamic model/tool selection.
+ * Designed for extensibility and clarity for external developers.
+ */
 import * as readline from "readline";
 import { createAISDKTools } from "@agentic/ai-sdk";
 // AI model providers
@@ -15,7 +22,12 @@ try {
   openrouterModule = null;
 }
 
-// Function to initialize OpenRouter client with current API key
+/**
+ * Initializes the OpenRouter client using the current API key from environment variables.
+ * Returns the client instance if successful, or null if unavailable.
+ *
+ * @returns {any | null} The OpenRouter client instance, or null if not configured.
+ */
 function initializeOpenRouter() {
   if (!openrouterModule) return null;
   try {
@@ -35,6 +47,10 @@ import { YELLOW, RESET } from "./initialization";
 import { marked } from "marked";
 import TerminalRenderer from "marked-terminal";
 
+/**
+ * Represents a single message in the conversation history.
+ * Used to track user, assistant, and system messages, including tool usage.
+ */
 interface ConversationMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
@@ -42,6 +58,10 @@ interface ConversationMessage {
   toolUsed?: string;
 }
 
+/**
+ * Represents the context for a multi-step task.
+ * Tracks task description, completed and next steps, and completion status.
+ */
 interface TaskContext {
   isMultiStep: boolean;
   taskDescription: string;
@@ -51,8 +71,11 @@ interface TaskContext {
 }
 
 /**
- * Utility to parse model string and select provider/modelName.
- * Supports: openai, anthropic, google, openrouter, custom.
+ * Parses a model string to extract the provider and model name.
+ * Supports formats like "openai/gpt-4" or just "gpt-4" (defaults to OpenAI).
+ *
+ * @param {string} modelString - The model string to parse.
+ * @returns {{ provider: string, modelName: string }} The provider and model name.
  */
 function parseModelString(modelString: string): { provider: string, modelName: string } {
   if (!modelString.includes("/")) {
@@ -64,7 +87,12 @@ function parseModelString(modelString: string): { provider: string, modelName: s
 }
 
 /**
- * Returns the correct model function for the provider.
+ * Returns the appropriate model client function for the specified provider.
+ * Supports OpenAI, Anthropic, Google, and OpenRouter.
+ *
+ * @param {string} provider - The AI provider name (e.g., "openai", "anthropic").
+ * @returns {(modelName: string) => any} Function to get the model instance for the provider.
+ * @throws {Error} If the provider is unsupported or not configured.
  */
 function getClientForProvider(provider: string): ((modelName: string) => any) {
   switch (provider) {
@@ -88,6 +116,16 @@ function getClientForProvider(provider: string): ((modelName: string) => any) {
   }
 }
 
+/**
+ * Starts and manages the interactive agent session in the terminal.
+ * Handles user prompts, conversation history, multi-step task logic, and tool/model selection.
+ * Provides a rich, markdown-enabled interface for agent interaction.
+ *
+ * @param {any} config - The agent configuration object.
+ * @param {Record<string, any>} loadedTools - Loaded MCP tool instances.
+ * @param {string} sessionFile - Path to the session memory log file.
+ * @param {string} agentName - The display name of the agent.
+ */
 export function runInteractiveSession(config: any, loadedTools: Record<string, any>, sessionFile: string, agentName: string) {
   const BLUE = "\x1b[34m";
   const RESET = "\x1b[0m";
@@ -138,7 +176,12 @@ CONTEXT AWARENESS:
     ((rl as any).output as NodeJS.WriteStream).write(BLUE + stringToWrite + RESET);
   };
 
-  // Helper function to detect if a task is multi-step
+  /**
+   * Determines if a user prompt describes a multi-step task (e.g., project creation).
+   *
+   * @param {string} prompt - The user prompt to analyze.
+   * @returns {boolean} True if the prompt is likely a multi-step task, false otherwise.
+   */
   function isMultiStepTask(prompt: string): boolean {
     const multiStepKeywords = [
       'create', 'build', 'setup', 'make', 'develop', 'implement', 'generate',
@@ -149,7 +192,12 @@ CONTEXT AWARENESS:
     return multiStepKeywords.some(keyword => lowerPrompt.includes(keyword));
   }
 
-  // Helper function to build conversation context
+  /**
+   * Builds a string representation of recent conversation history and current task context.
+   * Used to provide context to the language model for more coherent responses.
+   *
+   * @returns {string} The formatted conversation and task context.
+   */
   function buildConversationContext(): string {
     if (conversationHistory.length === 0) return '';
     
@@ -174,7 +222,13 @@ CONTEXT AWARENESS:
     return context;
   }
 
-  // Helper function to analyze if task needs continuation
+  /**
+   * Determines if the agent should automatically continue a multi-step task based on the last response or tool used.
+   *
+   * @param {string} response - The assistant's last response.
+   * @param {string} [toolUsed] - The name of the tool used, if any.
+   * @returns {boolean} True if the task should continue automatically, false if complete.
+   */
   function shouldContinueTask(response: string, toolUsed?: string): boolean {
     if (!currentTaskContext || currentTaskContext.isComplete) return false;
     
@@ -217,7 +271,14 @@ CONTEXT AWARENESS:
     return continuationIndicators.some(indicator => lowerResponse.includes(indicator));
   }
 
-  // Main processing function
+  /**
+   * Processes a user prompt, manages conversation flow, invokes tools/models, and handles multi-step logic.
+   * Updates conversation history and task context as needed.
+   *
+   * @param {string} prompt - The user's input prompt.
+   * @param {boolean} [isAutoContinuation=false] - Whether this is an automatic continuation of a multi-step task.
+   * @returns {Promise<void>}
+   */
   async function processUserInput(prompt: string, isAutoContinuation = false): Promise<void> {
     const userTime = new Date();
     
