@@ -5,7 +5,6 @@
       "args": [
         "-y",
         "@modelcontextprotocol/server-filesystem",
-        "/Users/alnavarro",
         "/Users/alnavarro/Development/mragent"
       ]
     },
