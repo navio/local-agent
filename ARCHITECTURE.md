@@ -109,19 +109,19 @@ flowchart TD
 
 ### Goals
 
-- Users can run `npx localagent` in any folder to initialize or restart the CLI agent.
+- Users can run `npx local-agent` in any folder to initialize or restart the CLI agent.
 - All required files and folders are created or checked on first run.
-- The CLI is published to npm as `localagent`.
+- The CLI is published to npm as `local-agent`.
 
 ### Steps
 
 1. **Prepare for Release**
-   - Ensure `package.json` has a `bin` entry for the CLI (e.g., `"bin": { "localagent": "./cli.js" }`).
+   - Ensure `package.json` has a `bin` entry for the CLI (e.g., `"bin": { "local-agent": "./cli.js" }`).
    - Ensure all dependencies are listed and compatible with both Node.js and Bun.
    - Add a postinstall script if any build steps are needed.
 
 2. **Testing**
-   - Test running `npx localagent` in a fresh folder:
+   - Test running `npx local-agent` in a fresh folder:
      - Should prompt to create missing files.
      - Should initialize `memory/` and required config files.
      - Should load default and custom MCPs.
@@ -134,7 +134,7 @@ flowchart TD
      - How to reset or re-initialize a folder.
 
 4. **Publish**
-   - Run `npm publish` to publish the CLI to npm as `localagent`.
+   - Run `npm publish` to publish the CLI to npm as `local-agent`.
 
 5. **Post-Release**
    - Monitor for issues.
@@ -144,7 +144,7 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    User([User runs npx localagent])
+    User([User runs npx local-agent])
     CheckFiles{Check for required files}
     PromptCreate[Prompt to create missing files]
     LoadConfig[Load config, tools, keys]

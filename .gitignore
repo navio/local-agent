@@ -8,7 +8,7 @@ yarn.lock
 localagent.json
 keys.json
 mcp-tools.json
-localagent-*.tgz
+local-agent-*.tgz
 system.md
 
 memory/

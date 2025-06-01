@@ -4,7 +4,7 @@
   "description": "A CLI agentic system for orchestrating tools and memory with per-folder scoping",
   "main": "dist/cli.js",
   "bin": {
-    "localagent": "bin/localagent.js"
+    "local-agent": "bin/local-agent.js"
   },
   "scripts": {
     "build": "tsc",
@@ -18,10 +18,10 @@
     "test:build": "npm run build && npm run create-bin && echo 'Build completed successfully'",
     "test:node": "node dist/cli.js",
     "test:bun": "bun cli.ts",
-    "test:bin": "node bin/localagent.js",
+    "test:bin": "node bin/local-agent.js",
     "package": "npm pack",
-    "package:test": "npm pack && npm install -g ./localagent-*.tgz",
-    "clean": "rm -rf dist bin node_modules package-lock.json localagent-*.tgz",
+    "package:test": "npm pack && npm install -g ./local-agent-*.tgz",
+    "clean": "rm -rf dist bin node_modules package-lock.json local-agent-*.tgz",
     "reset": "npm run clean && npm install",
     "setup": "npm install && npm run build && npm run create-bin",
     "release:prepare": "npm run build:clean && npm run create-bin && npm run package",
@@ -72,12 +72,12 @@
   },
   "bun": {
     "bin": {
-      "localagent": "cli.ts"
+      "local-agent": "cli.ts"
     }
   },
   "types": "./dist/cli.d.ts",
   "bugs": {
-    "url": "https://github.com/yourusername/localagent/issues"
+    "url": "https://github.com/yourusername/local-agent/issues"
   },
-  "homepage": "https://github.com/yourusername/localagent#readme"
+  "homepage": "https://github.com/yourusername/local-agent#readme"
 }

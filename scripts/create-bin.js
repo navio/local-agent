@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const binDir = path.join(__dirname, '..', 'bin');
-const binFile = path.join(binDir, 'localagent.js');
+const binFile = path.join(binDir, 'local-agent.js');
 
 const wrapperScript = `#!/usr/bin/env node
 
