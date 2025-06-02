@@ -12,16 +12,16 @@
     "create-bin": "mkdir -p bin && node scripts/create-bin.js",
     "prepublishOnly": "npm run build && npm run create-bin",
     "start": "node dist/cli.js",
-    "start:bun": "bun cli.ts",
-    "dev": "tsx cli.ts",
-    "dev:bun": "bun cli.ts",
+    "start:bun": "bun src/cli.ts",
+    "dev": "tsx src/cli.ts",
+    "dev:bun": "bun src/cli.ts",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:runner": "node scripts/run-tests.js",
     "test:build": "npm run build && npm run create-bin && echo 'Build completed successfully'",
     "test:node": "node dist/cli.js",
-    "test:bun": "bun cli.ts",
+    "test:bun": "bun src/cli.ts",
     "test:bin": "node bin/local-agent.js",
     "package": "npm pack",
     "package:test": "npm pack && npm install -g ./local-agent-*.tgz",
@@ -34,8 +34,8 @@
   "files": [
     "dist/**/*",
     "bin/**/*",
-    "cli.ts",
-    "*.ts",
+    "src/cli.ts",
+    "src/*.ts",
     "README.md",
     "ARCHITECTURE.md",
     "SCRIPTS.md"
@@ -82,7 +82,7 @@
   },
   "bun": {
     "bin": {
-      "local-agent": "cli.ts"
+      "local-agent": "src/cli.ts"
     }
   },
   "types": "./dist/cli.d.ts",

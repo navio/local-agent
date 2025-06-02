@@ -4,8 +4,8 @@ module.exports = {
   roots: ['<rootDir>/tests'],
   testMatch: ['**/*.test.ts'],
   collectCoverageFrom: [
-    '*.ts',
-    '!cli.ts',
+    'src/*.ts',
+    '!src/cli.ts',
     '!jest.config.js',
     '!dist/**',
     '!node_modules/**'

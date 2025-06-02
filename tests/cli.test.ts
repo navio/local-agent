@@ -28,7 +28,7 @@ jest.mock('marked-terminal', () => jest.fn());
 jest.mock('readline');
 
 // Mock the specific modules
-jest.mock('../initialization', () => ({
+jest.mock('../src/initialization', () => ({
   validateAndLoadFiles: jest.fn(),
   loadAllMcpTools: jest.fn(),
   GREEN: '\x1b[32m',
@@ -37,11 +37,11 @@ jest.mock('../initialization', () => ({
   RESET: '\x1b[0m'
 }));
 
-jest.mock('../interactions', () => ({
+jest.mock('../src/interactions', () => ({
   runInteractiveSession: jest.fn()
 }));
 
-jest.mock('../memory', () => ({
+jest.mock('../src/memory', () => ({
   createSessionFile: jest.fn()
 }));
 

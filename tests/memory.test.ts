@@ -5,7 +5,7 @@ import {
   logToolUsed,
   logAgentResponse,
   logAgentError
-} from '../memory';
+} from '../src/memory';
 
 // Mock fs module
 jest.mock('fs');

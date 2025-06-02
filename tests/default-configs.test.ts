@@ -1,5 +1,5 @@
-import { DEFAULT_CONFIG, DEFAULT_TOOLS, DEFAULT_KEYS } from '../default-configs';
-import { GenerateTextParamsSchema, ToolsJsonSchema, KeysJsonSchema } from '../types';
+import { DEFAULT_CONFIG, DEFAULT_TOOLS, DEFAULT_KEYS } from '../src/default-configs';
+import { GenerateTextParamsSchema, ToolsJsonSchema, KeysJsonSchema } from '../src/types';
 
 describe('default-configs.ts', () => {
   describe('DEFAULT_CONFIG', () => {
@@ -179,7 +179,7 @@ describe('default-configs.ts', () => {
       
       // Re-import to get fresh configuration
       jest.resetModules();
-      const { DEFAULT_TOOLS: newDefaultTools } = require('../default-configs');
+      const { DEFAULT_TOOLS: newDefaultTools } = require('../src/default-configs');
       
       expect(newDefaultTools.mcpServers.filesystem.args).toContain('/different/path');
       

@@ -16,8 +16,8 @@ import {
   RED,
   YELLOW,
   RESET
-} from '../initialization';
-import { DEFAULT_CONFIG, DEFAULT_TOOLS, DEFAULT_KEYS } from '../default-configs';
+} from '../src/initialization';
+import { DEFAULT_CONFIG, DEFAULT_TOOLS, DEFAULT_KEYS } from '../src/default-configs';
 
 const mockExistsSync = existsSync as jest.MockedFunction<typeof existsSync>;
 const mockMkdirSync = mkdirSync as jest.MockedFunction<typeof mkdirSync>;

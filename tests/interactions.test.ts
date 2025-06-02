@@ -5,7 +5,7 @@ jest.mock('@agentic/ai-sdk');
 jest.mock('@ai-sdk/openai');
 jest.mock('@ai-sdk/anthropic');
 jest.mock('@ai-sdk/google');
-jest.mock('../memory');
+jest.mock('../src/memory');
 jest.mock('marked');
 jest.mock('marked-terminal');
 
@@ -17,7 +17,7 @@ jest.mock('@openrouter/ai-sdk-provider', () => ({
 }), { virtual: true });
 
 import * as readline from 'readline';
-import * as memory from '../memory';
+import * as memory from '../src/memory';
 
 const mockReadline = readline as jest.Mocked<typeof readline>;
 const mockMemory = memory as jest.Mocked<typeof memory>;
