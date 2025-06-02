@@ -78,6 +78,8 @@ provider/model-name
 ```json
 {
   "model": "openai/gpt-4o-mini"
+}
+```
 ---
 ## 🧩 Adding and Using MCP Tools
 
