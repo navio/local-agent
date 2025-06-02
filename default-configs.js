@@ -1,15 +1,13 @@
-import { GenerateTextParams, ToolsJson } from "./types";
-
 /**
  * Default content for local-agent.json (generateText signature)
  */
-export const DEFAULT_CONFIG: GenerateTextParams = {
-  model: "openai/gpt-4o-mini",
-  tools: "mcpTools",
-  toolChoice: "required",
-  temperature: 0,
-  prompt_style: `${"\x1b[34m"}$> ${"\x1b[0m"}`,  // Default blue prompt style
-  system: `You are a highly capable AI assistant specialized in software development and project management. You excel at handling complex, multi-step tasks that require multiple tool invocations and maintaining context across operations.
+export const DEFAULT_CONFIG = {
+    model: "openai/gpt-4o-mini",
+    tools: "mcpTools",
+    toolChoice: "required",
+    temperature: 0,
+    prompt_style: `${"\x1b[34m"}$> ${"\x1b[0m"}`, // Default blue prompt style
+    system: `You are a highly capable AI assistant specialized in software development and project management. You excel at handling complex, multi-step tasks that require multiple tool invocations and maintaining context across operations.
 
 CORE CAPABILITIES:
 - Create complete projects with proper file structure, dependencies, and configurations
@@ -35,38 +33,36 @@ TERMINAL COMMANDS:
 - The assistant is aware of the current working directory at all times
 
 Be thorough, systematic, and focused on delivering complete, working solutions.`,
-  prompt: "What files are in the current directory?"
+    prompt: "What files are in the current directory?"
 };
-
 /**
  * Default content for mcp-tools.json (mcpServers pattern)
  * Only includes filesystem and basic-memory.
  */
-export const DEFAULT_TOOLS: ToolsJson = {
-  mcpServers: {
-    "filesystem": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-filesystem",
-        process.cwd()
-      ]
-    },
-    "memory-bank-mcp": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@aakarsh-sasi/memory-bank-mcp"
-      ]
+export const DEFAULT_TOOLS = {
+    mcpServers: {
+        "filesystem": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-filesystem",
+                process.cwd()
+            ]
+        },
+        "memory-bank-mcp": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "@aakarsh-sasi/memory-bank-mcp"
+            ]
+        }
     }
-  }
 };
-
 /**
  * Default content for keys.json
  * Add your API keys here for different providers
  */
 export const DEFAULT_KEYS = {
-  // "openai": "your-openai-api-key-here",
-  // "openrouter": "your-openrouter-api-key-here"
+// "openai": "your-openai-api-key-here",
+// "openrouter": "your-openrouter-api-key-here"
 };

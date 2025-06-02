@@ -24,6 +24,8 @@ export interface GenerateTextParams {
   system?: string;
   /** The main user prompt for text generation. */
   prompt: string;
+  /** Optional prompt style for the CLI interface. */
+  prompt_style?: string;
   // ...other optional params
 }
 
@@ -35,6 +37,7 @@ export const GenerateTextParamsSchema = z.object({
   temperature: z.number().optional(),
   system: z.string().optional(),
   prompt: z.string(),
+  prompt_style: z.string().optional(),
 });
 
 /**

@@ -41,6 +41,128 @@ function initializeOpenRouter() {
 import { logToolUsed, logAgentResponse, logAgentError, logUserPrompt } from "./memory";
 import { YELLOW, RESET } from "./initialization";
 
+// Simple terminal command handling
+
+import { exec } from 'child_process';
+import { promisify } from 'util';
+import * as path from 'path';
+
+// Promisify exec for async/await usage
+const execPromise = promisify(exec);
+
+// Common terminal commands that should be executed directly
+const TERMINAL_COMMANDS = [
+  // File system commands
+  'ls', 'dir', 'cd', 'pwd', 'mkdir', 'rmdir', 'touch', 'rm', 'cp', 'mv', 'cat', 'less', 'more',
+  'head', 'tail', 'find', 'grep', 'awk', 'sed', 'diff', 'chmod', 'chown',
+  
+  // Navigation commands
+  'cd', 'pushd', 'popd', 'dirs',
+  
+  // Package managers
+  'npm', 'yarn', 'pnpm', 'bun', 'pip', 'pip3', 'gem', 'bundle', 'cargo', 'go',
+  
+  // Git commands
+  'git', 'svn', 'hg',
+  
+  // Process management
+  'ps', 'top', 'htop', 'kill', 'pkill',
+  
+  // Network commands
+  'ping', 'curl', 'wget', 'ssh', 'netstat', 'ifconfig', 'ip',
+  
+  // System commands
+  'echo', 'date', 'whoami', 'hostname', 'uname', 'df', 'du', 'free',
+];
+
+// Keep track of the current working directory
+let currentWorkingDirectory = process.cwd();
+
+/**
+ * Determines if user input is a terminal command
+ */
+function isTerminalCommand(input: string): boolean {
+  const trimmedInput = input.trim();
+  if (!trimmedInput) return false;
+  
+  const firstWord = trimmedInput.split(' ')[0];
+  
+  // Match against common commands
+  if (TERMINAL_COMMANDS.includes(firstWord)) {
+    return true;
+  }
+  
+  // Check for paths, pipes, etc.
+  if (trimmedInput.startsWith('./') || 
+      trimmedInput.startsWith('/') || 
+      trimmedInput.includes('|') ||
+      trimmedInput.includes('>')) {
+    return true;
+  }
+  
+  return false;
+}
+
+/**
+ * Handles cd command specially to update working directory
+ */
+function handleCdCommand(command: string): string {
+  const parts = command.trim().split(' ');
+  const targetDir = parts.slice(1).join(' ').trim() || process.env.HOME || '';
+  
+  try {
+    process.chdir(targetDir);
+    currentWorkingDirectory = process.cwd();
+    return `Changed directory to ${currentWorkingDirectory}`;
+  } catch (error) {
+    return `cd: ${error instanceof Error ? error.message : String(error)}`;
+  }
+}
+
+/**
+ * Executes a terminal command
+ */
+async function executeTerminalCommand(command: string): Promise<{stdout: string, stderr: string}> {
+  const trimmedCommand = command.trim();
+  
+  // Handle empty commands
+  if (!trimmedCommand) {
+    return { stdout: '', stderr: '' };
+  }
+  
+  // Special handling for cd command
+  if (trimmedCommand.startsWith('cd ') || trimmedCommand === 'cd') {
+    const result = handleCdCommand(trimmedCommand);
+    return { stdout: result, stderr: '' };
+  }
+  
+  try {
+    // Execute the command in the current working directory
+    const { stdout, stderr } = await execPromise(trimmedCommand, { cwd: currentWorkingDirectory });
+    return { stdout, stderr };
+  } catch (error) {
+    // Handle command execution errors
+    if (error instanceof Error) {
+      const execError = error as any;
+      return {
+        stdout: execError.stdout || '',
+        stderr: execError.stderr || error.message
+      };
+    }
+    return {
+      stdout: '',
+      stderr: error ? String(error) : 'Unknown error occurred'
+    };
+  }
+}
+
+/**
+ * Gets the current working directory
+ */
+function getCurrentWorkingDirectory(): string {
+  return currentWorkingDirectory;
+}
+
 /**
  * Run the interactive prompt loop for the agent session.
  */
@@ -129,10 +251,13 @@ function getClientForProvider(provider: string): ((modelName: string) => any) {
 export function runInteractiveSession(config: any, loadedTools: Record<string, any>, sessionFile: string, agentName: string) {
   const BLUE = "\x1b[34m";
   const RESET = "\x1b[0m";
+  // Simple default prompt (can be customized via config)
+  const customPrompt = config.prompt_style || `${BLUE}> ${RESET}`;
+  
   const rl = readline.createInterface({
     input: process.stdin,
     output: process.stdout,
-    prompt: `${BLUE}$> ${RESET}`
+    prompt: customPrompt
   });
 
   // Configure marked to use TerminalRenderer for markdown output
@@ -303,6 +428,42 @@ CONTEXT AWARENESS:
       }
     }
 
+    // Check if this is a terminal command
+    if (isTerminalCommand(prompt)) {
+      try {
+        // Execute the terminal command
+        const { stdout, stderr } = await executeTerminalCommand(prompt);
+        
+        // Log the result to the console and session file
+        if (stdout.trim()) {
+          console.log(stdout.trim());
+        }
+        if (stderr.trim()) {
+          console.error(stderr.trim());
+        }
+        
+        // Log to session file
+        logAgentResponse(sessionFile, `Executed terminal command: ${prompt}\n\nStdout:\n${stdout}\n\nStderr:\n${stderr}`);
+        
+        // Add to conversation history
+        conversationHistory.push({
+          role: 'assistant',
+          content: `Executed terminal command: ${prompt}\n\nStdout:\n${stdout}\n\nStderr:\n${stderr}`,
+          timestamp: new Date(),
+          toolUsed: 'terminal-command'
+        });
+        
+        // Prompt for next input
+        rl.prompt();
+        return;
+      } catch (error) {
+        console.error(`Error executing command: ${error instanceof Error ? error.message : String(error)}`);
+        logAgentError(sessionFile, `Error executing command: ${error instanceof Error ? error.message : String(error)}`);
+        rl.prompt();
+        return;
+      }
+    }
+
     // Add a space before the thinking/loading spinner
     console.log("");
 
@@ -351,7 +512,7 @@ CONTEXT AWARENESS:
         model,
         tools: allTools,
         temperature: config.temperature,
-        system: enhancedSystemPrompt,
+        system: enhancedSystemPrompt + `\n\nCurrent working directory: ${getCurrentWorkingDirectory()}\n`,
         prompt: contextualPrompt
       });
       
@@ -422,7 +583,7 @@ CONTEXT AWARENESS:
           const summaryResult = await generateText({
             model: summaryModel,
             temperature: config.temperature,
-            system: enhancedSystemPrompt,
+            system: enhancedSystemPrompt + `\n\nCurrent working directory: ${getCurrentWorkingDirectory()}\n`,
             prompt: continuePrompt + buildConversationContext()
           });
           clearInterval(toolSpinnerInterval);

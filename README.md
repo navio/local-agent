@@ -249,6 +249,9 @@ For more details, see the [AI Client Provider Refactor Design Document](AI_CLIEN
 - **system.md**: System prompt and agent instructions, specific to the folder/root.  
   _Set the direction and behavior of the agent for this scope._
 - **local-agent.json**: Agent configuration (name, settings, etc.) for the current root.
+  - `prompt_style`: Customize the CLI prompt (e.g., `"\u001b[32mmy-agent> \u001b[0m"` for green prompt)
+  - `model`: Select AI provider and model (e.g., `"openai/gpt-4o-mini"`)
+  - `temperature`: Set the AI response randomness (0-1)
 - **mcp-tools.json**: List of MCP tools to load (default MCPs are injected if missing), can be tailored per folder/root.
   _Choose which tools are available for the agent in this scope._
 - **keys.json**: API keys for different providers (OpenAI, OpenRouter, Anthropic, Google) for the current root.
@@ -309,6 +312,58 @@ All interactions and changes are logged in the `memory/` directory as markdown f
 
 - To publish: `npm publish`
 - Contributions welcome! See `ARCHITECTURE.md` for design details.
+
+---
+
+## 🖥️ Terminal Companion Mode
+
+local-agent now functions as a true terminal companion, intelligently detecting and executing standard terminal commands while still providing AI assistance for conversational prompts.
+
+### Key Features
+
+- **Seamless Terminal Integration**: Execute standard terminal commands (ls, cd, git, etc.) directly through the agent interface
+- **Intelligent Command Detection**: Automatically identifies and routes terminal commands
+- **Working Directory Awareness**: Maintains current directory state for navigation commands
+- **Command History**: All terminal commands and their outputs are logged in session history
+- **Context-Aware AI**: Agent responses include awareness of current working directory
+- **Customizable Prompt**: Personalize your CLI prompt with custom text and colors
+
+### Using Native Shell Prompt
+
+To use your native shell's prompt (bash/zsh):
+
+```bash
+# Source the native-prompt script
+source native-prompt.sh
+
+# Then use the created alias
+mragent
+```
+
+This preserves your shell's exact prompt styling, including:
+- Current directory path
+- Username and hostname
+- Git branch information
+- Colors and special formatting
+- Custom prompt elements
+
+### Example Usage
+
+```
+# Terminal command - executed directly
+user@hostname ~/project $ ls -la
+total 112
+drwxr-xr-x  17 user  staff   544 Jun 1 14:23 .
+drwxr-xr-x   8 user  staff   256 May 29 09:11 ..
+-rw-r--r--   1 user  staff  2190 Jun 1 14:23 README.md
+...
+
+# Normal AI prompt - processed by model
+user@hostname ~/project $ How can I optimize this code to run faster?
+Let me analyze your code and suggest some optimizations...
+```
+
+For detailed documentation on this feature, see [TERMINAL_COMPANION.md](documents/TERMINAL_COMPANION.md).
 
 ---
 
