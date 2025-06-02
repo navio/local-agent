@@ -149,7 +149,7 @@ export function runInteractiveSession(config: any, loadedTools: Record<string, a
 
 IMPORTANT INSTRUCTIONS FOR MULTI-STEP TASKS:
 - You are capable of handling complex, multi-step tasks that require multiple tool invocations
-- When a user requests a complex task (like creating a React app, setting up a project, etc.), break it down into logical steps
+- When a user requests a complex task (like setting up a project, etc.), break it down into logical steps
 - After completing each step, analyze if the overall task is complete or if more steps are needed
 - If more steps are needed, continue working on the task without waiting for user input
 - Only stop and wait for user input when the entire task is genuinely complete or you need clarification
