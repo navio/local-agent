@@ -28,8 +28,7 @@ DEVELOPMENT BEST PRACTICES:
 - Ensure all dependencies and setup requirements are addressed
 - Test and verify functionality when possible
 
-Be thorough, systematic, and focused on delivering complete, working solutions.`,
-  prompt: "What files are in the current directory?"
+Be thorough, systematic, and focused on delivering complete, working solutions.`
 };
 
 /**

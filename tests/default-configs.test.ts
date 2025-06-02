@@ -12,7 +12,6 @@ describe('default-configs.ts', () => {
       expect(DEFAULT_CONFIG.tools).toBe('mcpTools');
       expect(DEFAULT_CONFIG.toolChoice).toBe('required');
       expect(DEFAULT_CONFIG.temperature).toBe(0);
-      expect(DEFAULT_CONFIG.prompt).toBe('What files are in the current directory?');
     });
 
     it('should have a comprehensive system prompt', () => {
@@ -140,8 +139,6 @@ describe('default-configs.ts', () => {
     });
 
     it('should have a helpful default prompt', () => {
-      expect(DEFAULT_CONFIG.prompt).toBe('What files are in the current directory?');
-      expect(DEFAULT_CONFIG.prompt.length).toBeGreaterThan(10);
     });
 
     it('should use npx for all default tools', () => {
@@ -234,8 +231,6 @@ describe('default-configs.ts', () => {
       expect(DEFAULT_CONFIG.toolChoice).toBe('required');
       
       // Helpful default prompt
-      expect(DEFAULT_CONFIG.prompt).toContain('files');
-      expect(DEFAULT_CONFIG.prompt).toContain('directory');
     });
   });
 });

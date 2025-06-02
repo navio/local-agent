@@ -22,8 +22,6 @@ export interface GenerateTextParams {
   temperature?: number;
   /** Optional system prompt to provide context or instructions to the model. */
   system?: string;
-  /** The main user prompt for text generation. */
-  prompt: string;
   // ...other optional params
 }
 
@@ -34,7 +32,6 @@ export const GenerateTextParamsSchema = z.object({
   toolChoice: z.string().optional(),
   temperature: z.number().optional(),
   system: z.string().optional(),
-  prompt: z.string(),
 });
 
 /**

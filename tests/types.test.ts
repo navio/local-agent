@@ -20,7 +20,6 @@ describe('types.ts', () => {
         toolChoice: 'auto',
         temperature: 0.7,
         system: 'You are a helpful assistant',
-        prompt: 'Hello, world!'
       };
 
       const result = GenerateTextParamsSchema.parse(validParams);
@@ -29,7 +28,6 @@ describe('types.ts', () => {
 
     it('should validate minimal valid params (only prompt required)', () => {
       const minimalParams = {
-        prompt: 'Hello, world!'
       };
 
       const result = GenerateTextParamsSchema.parse(minimalParams);
@@ -40,25 +38,16 @@ describe('types.ts', () => {
       const params = {
         model: { provider: 'openai', name: 'gpt-4' },
         tools: { filesystem: true },
-        prompt: 'Test prompt'
       };
 
       const result = GenerateTextParamsSchema.parse(params);
       expect(result).toEqual(params);
     });
 
-    it('should reject params without prompt', () => {
-      const invalidParams = {
-        name: 'test-agent',
-        model: 'gpt-4'
-      };
-
-      expect(() => GenerateTextParamsSchema.parse(invalidParams)).toThrow();
-    });
+    // Removed: prompt is no longer required, so this test is obsolete.
 
     it('should reject invalid temperature type', () => {
       const invalidParams = {
-        prompt: 'Test',
         temperature: 'invalid'
       };
 
@@ -67,7 +56,6 @@ describe('types.ts', () => {
 
     it('should reject invalid system type', () => {
       const invalidParams = {
-        prompt: 'Test',
         system: 123
       };
 
@@ -270,11 +258,9 @@ describe('types.ts', () => {
         toolChoice: 'auto',
         temperature: 0.5,
         system: 'system prompt',
-        prompt: 'user prompt'
       };
 
       // TypeScript compilation validates the interface structure
-      expect(params.prompt).toBe('user prompt');
       expect(params.name).toBe('test');
       expect(params.temperature).toBe(0.5);
     });
@@ -316,26 +302,22 @@ describe('types.ts', () => {
   describe('Schema validation edge cases', () => {
     it('should handle undefined optional fields in GenerateTextParams', () => {
       const params = {
-        prompt: 'test',
         name: undefined,
         temperature: undefined
       };
 
       const result = GenerateTextParamsSchema.parse(params);
-      expect(result.prompt).toBe('test');
       expect(result.name).toBeUndefined();
       expect(result.temperature).toBeUndefined();
     });
 
     it('should handle extra properties in schemas', () => {
       const paramsWithExtra = {
-        prompt: 'test',
         extraProperty: 'should be ignored'
       };
 
       // Zod by default strips unknown properties
       const result = GenerateTextParamsSchema.parse(paramsWithExtra);
-      expect(result.prompt).toBe('test');
       expect((result as any).extraProperty).toBeUndefined();
     });
 
