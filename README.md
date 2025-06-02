@@ -73,13 +73,6 @@ provider/model-name
 
 #### Examples
 
-##### OpenAI
-
-```json
-{
-  "model": "openai/gpt-4o-mini"
-}
-```
 ---
 ## 🧩 Adding and Using MCP Tools
 
@@ -168,6 +161,11 @@ To add or customize MCP tools for your project:
 For more details on available MCP tools and advanced configuration, see the [ARCHITECTURE.md](ARCHITECTURE.md) and [AI_CLIENT_PROVIDER_REFACTOR.md](AI_CLIENT_PROVIDER_REFACTOR.md) documents.
 
 ---
+##### OpenAI
+
+```json
+{
+  "model": "openai/gpt-4o-mini"
 }
 ```
 - Uses OpenAI as the provider with the `gpt-4o-mini` model.
