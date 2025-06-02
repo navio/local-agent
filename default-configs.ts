@@ -50,7 +50,10 @@ export const DEFAULT_TOOLS: ToolsJson = {
       "command": "npx",
       "args": [
         "-y",
-        "@aakarsh-sasi/memory-bank-mcp"
+        "@aakarsh-sasi/memory-bank-mcp",
+        "--path", process.cwd(),
+        "--folder", "memory",
+        "--mode", "code"
       ]
     }
   }
