@@ -10,7 +10,7 @@
  * For configuration and usage details, see README.md.
  */
 import 'dotenv/config'
-import { validateAndLoadFiles, loadAllMcpTools, GREEN, RED, RESET } from "./initialization";
+import { validateAndLoadFiles, loadAllMcpTools, GREEN, RED, RESET } from "./initialization.js";
 
 // Help option: show usage and config instructions if -h or --help is present
 if (process.argv.includes('-h') || process.argv.includes('--help')) {
@@ -48,8 +48,8 @@ For more details, see README.md.
 `);
   process.exit(0);
 }
-import { runInteractiveSession } from "./interactions";
-import { createSessionFile } from "./memory";
+import { runInteractiveSession } from "./interactions.js";
+import { createSessionFile } from "./memory.js";
 import { dirname, basename, resolve } from "path";
 import { existsSync } from "fs";
 

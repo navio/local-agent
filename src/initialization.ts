@@ -6,14 +6,14 @@
  * All log messages use the prefix [local-agent] for consistency and clarity.
  */
 import { existsSync, mkdirSync, writeFileSync, readFileSync } from "fs";
-import { DEFAULT_CONFIG, DEFAULT_TOOLS, DEFAULT_KEYS } from "./default-configs";
+import { DEFAULT_CONFIG, DEFAULT_TOOLS, DEFAULT_KEYS } from "./default-configs.js";
 import {
   GenerateTextParamsSchema,
   ToolsJson,
   ToolsJsonSchema,
   KeysJson,
   KeysJsonSchema
-} from "./types";
+} from "./types.js";
 import { createMcpTools } from "@agentic/mcp";
 
 /**

@@ -17,7 +17,7 @@ jest.mock('@openrouter/ai-sdk-provider', () => ({
 }), { virtual: true });
 
 import * as readline from 'readline';
-import * as memory from '../src/memory';
+import * as memory from '../src/memory.js';
 
 const mockReadline = readline as jest.Mocked<typeof readline>;
 const mockMemory = memory as jest.Mocked<typeof memory>;

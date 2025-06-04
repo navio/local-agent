@@ -38,8 +38,8 @@ function initializeOpenRouter() {
     return null;
   }
 }
-import { logToolUsed, logAgentResponse, logAgentError, logUserPrompt } from "./memory";
-import { YELLOW, RESET } from "./initialization";
+import { logToolUsed, logAgentResponse, logAgentError, logUserPrompt } from "./memory.js";
+import { YELLOW, RESET } from "./initialization.js";
 
 /**
  * Run the interactive prompt loop for the agent session.

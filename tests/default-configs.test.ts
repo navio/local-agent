@@ -1,5 +1,5 @@
-import { DEFAULT_CONFIG, DEFAULT_TOOLS, DEFAULT_KEYS } from '../src/default-configs';
-import { GenerateTextParamsSchema, ToolsJsonSchema, KeysJsonSchema } from '../src/types';
+import { DEFAULT_CONFIG, DEFAULT_TOOLS, DEFAULT_KEYS } from '../src/default-configs.js';
+import { GenerateTextParamsSchema, ToolsJsonSchema, KeysJsonSchema } from '../src/types.js';
 
 describe('default-configs.ts', () => {
   describe('DEFAULT_CONFIG', () => {

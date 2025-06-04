@@ -8,7 +8,7 @@ import {
   ToolsJsonSchema,
   KeysJson,
   KeysJsonSchema
-} from '../src/types';
+} from '../src/types.js';
 
 describe('types.ts', () => {
   describe('GenerateTextParamsSchema', () => {

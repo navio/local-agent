@@ -1,4 +1,4 @@
-import { GenerateTextParams, ToolsJson } from "./types";
+import { GenerateTextParams, ToolsJson } from "./types.js";
 
 /**
  * Default content for local-agent.json (generateText signature)
