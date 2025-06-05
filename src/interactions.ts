@@ -53,22 +53,39 @@ IMPORTANT INSTRUCTIONS FOR MULTI-STEP TASKS:
 - You are capable of handling complex, multi-step tasks that require multiple tool invocations
 - When a user requests a complex task (like setting up a project, etc.), break it down into logical steps
 - After completing each step, analyze if the overall task is complete or if more steps are needed
-- If more steps are needed, continue working on the task without waiting for user input
-- Only stop and wait for user input when the entire task is genuinely complete or you need clarification
-- Maintain context of what you've accomplished and what still needs to be done
-- For development tasks, ensure you create all necessary files, folders, and configurations
-- When creating projects, include package.json, proper file structure, and basic functionality
+- If more steps are needed, continue working on the task WITHOUT waiting for user input
+- DO NOT STOP after creating just one file or folder - continue until the task is truly complete
+- For development tasks, ensure you create ALL necessary files, folders, and configurations
+- When creating projects, include package.json, proper file structure, source files, and basic functionality
 
-TASK CONTINUATION LOGIC:
-- If you just created a folder for a project, continue by creating the necessary files
-- If you created some files but the project is incomplete, continue creating remaining files
-- If you set up basic structure, continue with configuration and dependencies
-- Only consider a task complete when it's fully functional and ready to use
+TASK CONTINUATION LOGIC - BE AGGRESSIVE:
+- If you just created a folder for a project, IMMEDIATELY continue by creating the necessary files
+- If you created some files but the project is incomplete, CONTINUE creating remaining files
+- If you set up basic structure, CONTINUE with configuration and dependencies
+- Create multiple files in sequence without stopping
+- Only consider a task complete when it's fully functional, all files exist, and ready to use
+- Use phrases like "Now I will", "Next I need to", "Let me now" to indicate continuation
+
+COMPLETION CRITERIA:
+- For projects: All source files, configuration files, and documentation must be created
+- The project should be immediately runnable/usable after completion
+- Include instructions on how to run/test the created project
+- Only stop when you would tell the user "you can now run this" or "everything is ready"
+
+TOOL USAGE GUIDELINES:
+- Use filesystem tools to create directories and write files manually
+- DO NOT try to run shell commands like 'npx create-react-app' - you don't have shell access
+- Instead, manually create all necessary files for projects (package.json, source files, etc.)
+- When creating React apps, manually create: package.json, src/App.js, src/index.js, public/index.html
+- When creating Node.js projects, manually create: package.json, server.js, routes/, etc.
+- If a tool fails with an error, acknowledge the error and try a different approach
+- Never repeat the same tool call that just failed
 
 CONTEXT AWARENESS:
 - Remember what you've done in previous steps of the current task
 - Build upon previous actions rather than starting over
-- Reference earlier work when explaining current actions`;
+- Reference earlier work when explaining current actions
+- If you get tool errors, explain them clearly and adapt your approach`;
 
   console.log(`Type your prompt for ${agentName} (Ctrl+C to exit):`);
   rl.prompt();
@@ -179,13 +196,23 @@ CONTEXT AWARENESS:
         return;
       }
 
-      const result = await generateText({
-        model,
-        tools: allTools,
-        temperature: config.temperature,
-        system: enhancedSystemPrompt,
-        prompt: contextualPrompt
-      });
+      // Add timeout for tool operations to prevent hanging
+      const generateTextWithTimeout = (timeoutMs: number = 120000) => {
+        return Promise.race([
+          generateText({
+            model,
+            tools: allTools,
+            temperature: config.temperature,
+            system: enhancedSystemPrompt,
+            prompt: contextualPrompt
+          }),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Tool operation timeout after 2 minutes')), timeoutMs)
+          )
+        ]);
+      };
+
+      const result = await generateTextWithTimeout() as any; // Type assertion for now
       
       spinnerActive = false;
       clearInterval(spinnerInterval);
@@ -195,30 +222,46 @@ CONTEXT AWARENESS:
       let toolResultObj: any = null;
       let toolName: string | undefined = undefined;
       let assistantResponse = "";
+      let hasToolCalls = false;
 
-      if (typeof result.text === "string" && result.text.trim() !== "") {
-        assistantResponse = result.text;
-        // Normal LLM response
-        if (result.text.trim() !== "") {
-          // Render markdown response with agent name in yellow
-          const agentPrefix = `${YELLOW}${agentName}>${RESET} `;
-          console.log(marked(`${agentPrefix}${result.text}\n`));
-          logAgentResponse(sessionFile, result.text);
-        }
-      } else if (result.toolResults && Array.isArray(result.toolResults) && result.toolResults.length > 0) {
-        toolResultObj = result.toolResults.find(
-          (tr) => typeof tr === "object" && tr !== null && tr.type === "tool-result"
-        );
+      // Debug: Log the full result structure to understand what we're getting
+      console.log(`\n[DEBUG] Result structure:`, JSON.stringify({
+        text: result.text ? `"${result.text.substring(0, 100)}..."` : result.text,
+        toolCalls: result.toolCalls ? result.toolCalls.length : 0,
+        toolResults: result.toolResults ? result.toolResults.length : 0,
+        usage: result.usage
+      }, null, 2));
+
+      // Check for tool calls first (before results)
+      if (result.toolCalls && Array.isArray(result.toolCalls) && result.toolCalls.length > 0) {
+        hasToolCalls = true;
+        const toolCall = result.toolCalls[0]; // Get first tool call
+        toolName = toolCall.toolName;
+        console.log(`\n[DEBUG] Tool call detected: ${toolName} with args:`, JSON.stringify(toolCall.args, null, 2));
+      }
+
+      // Check for tool results
+      if (result.toolResults && Array.isArray(result.toolResults) && result.toolResults.length > 0) {
+        toolResultObj = result.toolResults[0]; // Get first tool result
         if (toolResultObj) {
-          toolName = toolResultObj.toolName || "unknown-tool";
+          toolName = toolResultObj.toolName || toolName || "unknown-tool";
+          console.log(`\n[DEBUG] Tool result received for ${toolName}:`, JSON.stringify({
+            type: toolResultObj.type,
+            isError: toolResultObj.isError,
+            result: typeof toolResultObj.result === 'string' ? 
+              toolResultObj.result.substring(0, 200) + '...' : 
+              toolResultObj.result
+          }, null, 2));
         }
-      } else if (
-        typeof result === "object" &&
-        result !== null &&
-        (result as any).type === "tool-result"
-      ) {
-        toolResultObj = result;
-        toolName = (result as any).toolName || "unknown-tool";
+      }
+
+      // Process normal text response (when no tools are involved)
+      if (typeof result.text === "string" && result.text.trim() !== "" && !hasToolCalls) {
+        assistantResponse = result.text;
+        // Render markdown response with agent name in yellow
+        const agentPrefix = `${YELLOW}${agentName}>${RESET} `;
+        console.log(marked(`${agentPrefix}${result.text}\n`));
+        logAgentResponse(sessionFile, result.text);
       }
 
       if (toolResultObj && toolName) {
@@ -234,10 +277,38 @@ CONTEXT AWARENESS:
 
         // Record tool usage in task manager
         taskManager.recordToolUse(toolName, toolResultObj);
-        logToolUsed(sessionFile, toolName);
+        logToolUsed(sessionFile, toolName, toolResultObj);
 
         try {
-          const continuePrompt = `Here is the result of my last action:\n\n${JSON.stringify(toolResultObj, null, 2)}\n\nPlease describe what happened to the user as if you performed the action yourself, in natural language. If this is part of a multi-step task and more work is needed to complete the overall goal, continue with the next logical step without waiting for user input.`;
+          // Build detailed tool result context
+          let toolResultContext = "";
+          
+          if (toolResultObj.isError) {
+            // Handle tool errors explicitly
+            toolResultContext = `TOOL ERROR - ${toolName} failed with error:\n${JSON.stringify(toolResultObj.result, null, 2)}\n\nPlease acknowledge this error to the user, explain what went wrong, and if possible, try an alternative approach or fix the issue. Do not repeat the same action that failed.`;
+            console.log(`\n❌ [TOOL ERROR] ${toolName}:`, toolResultObj.result);
+          } else {
+            // Handle successful tool results
+            let resultData = toolResultObj.result;
+            
+            // Make result more readable for the LLM
+            if (typeof resultData === 'object') {
+              resultData = JSON.stringify(resultData, null, 2);
+            } else if (typeof resultData === 'string' && resultData.length > 1000) {
+              // Truncate very long results
+              resultData = resultData.substring(0, 1000) + '\n... (truncated)';
+            }
+            
+            toolResultContext = `TOOL SUCCESS - ${toolName} completed successfully with result:\n${resultData}\n\nPlease describe what happened to the user as if you performed the action yourself, in natural language. If this is part of a multi-step task and more work is needed to complete the overall goal, continue with the next logical step without waiting for user input.`;
+            
+            console.log(`\n✅ [TOOL SUCCESS] ${toolName}`);
+            if (typeof toolResultObj.result === 'string' && toolResultObj.result.length < 200) {
+              console.log(`Result: ${toolResultObj.result}`);
+            }
+          }
+
+          const continuePrompt = toolResultContext;
+          
           // Use the same dynamic model selection for summary
           let summaryModel;
           try {
@@ -249,12 +320,14 @@ CONTEXT AWARENESS:
             handleError(err, 'summary model selection');
             return;
           }
+          
           const summaryResult = await generateText({
             model: summaryModel,
             temperature: config.temperature,
             system: enhancedSystemPrompt,
             prompt: continuePrompt + buildConversationContext()
           });
+          
           clearInterval(toolSpinnerInterval);
           process.stdout.clearLine(0);
           process.stdout.cursorTo(0);
@@ -265,6 +338,7 @@ CONTEXT AWARENESS:
           } else {
             summaryResponse = JSON.stringify(summaryResult, null, 2);
           }
+          
           console.log("");
           // Render markdown summary response with agent name in yellow
           const agentPrefix = `${YELLOW}${agentName}>${RESET} `;

@@ -15,9 +15,11 @@ export class TaskManager {
   private nextSteps: string[] = [];
   private toolsUsed: string[] = [];
   private stepCount: number = 0;
-  private maxSteps: number = 20; // Prevent infinite loops
+  private maxSteps: number = 50; // Increased limit for complex tasks
   private lastResponseWithoutTools: number = 0; // Track responses without tool usage
-  private maxResponsesWithoutTools: number = 3; // Stop if too many responses without tools
+  private maxResponsesWithoutTools: number = 5; // Increased tolerance - projects need multiple steps
+  private lastToolUsed: string = ''; // Track the last tool used
+  private consecutiveNonToolResponses: number = 0; // More specific tracking
   
   // Pattern registries - moved from hard-coded arrays to configurable properties
   private continuationPatterns: string[] = [
@@ -127,34 +129,40 @@ export class TaskManager {
     
     this.stepCount++;
     
-    // Track responses without tool usage
-    if (!toolUsed) {
-      this.lastResponseWithoutTools++;
-    } else {
+    // Track tool usage more carefully
+    if (toolUsed) {
+      this.lastToolUsed = toolUsed;
+      this.consecutiveNonToolResponses = 0;
       this.lastResponseWithoutTools = 0;
+    } else {
+      this.consecutiveNonToolResponses++;
+      this.lastResponseWithoutTools++;
     }
     
-    // Check for completion conditions
-    if (this.isTaskComplete(response)) {
+    // Update task progress based on response FIRST
+    this.updateTaskProgress(response, toolUsed);
+    
+    // Only check for completion AFTER processing the response
+    // Be more conservative about marking tasks complete
+    if (this.shouldMarkComplete(response, toolUsed)) {
       this.completeTask();
       return;
     }
     
-    // Check for safety limits to prevent infinite loops
+    // Safety limits - but be more lenient for complex tasks
     if (this.stepCount >= this.maxSteps) {
       console.log(`\n⚠️ Task has reached maximum step limit (${this.maxSteps}). Marking as complete.`);
       this.completeTask();
       return;
     }
     
-    if (this.lastResponseWithoutTools >= this.maxResponsesWithoutTools) {
-      console.log(`\n⚠️ Task appears to be complete (no tool usage for ${this.maxResponsesWithoutTools} responses).`);
+    // Only stop if we have consecutive non-tool responses AND explicit completion signals
+    if (this.consecutiveNonToolResponses >= this.maxResponsesWithoutTools && 
+        this.hasExplicitCompletionSignal(response)) {
+      console.log(`\n⚠️ Task appears to be complete (${this.consecutiveNonToolResponses} responses without tools + completion signal).`);
       this.completeTask();
       return;
     }
-    
-    // Update task progress based on response
-    this.updateTaskProgress(response, toolUsed);
   }
   
   /**
@@ -226,7 +234,39 @@ export class TaskManager {
   }
   
   /**
-   * Checks if the task is complete based on the response.
+   * Determines if task should be marked complete (more conservative).
+   */
+  private shouldMarkComplete(response: string, toolUsed?: string): boolean {
+    const lowerResponse = response.toLowerCase();
+    
+    // Don't complete if we just used a tool - let it continue
+    if (toolUsed && this.continuationTools.some(tool => toolUsed.includes(tool))) {
+      return false;
+    }
+    
+    // Only complete on very explicit completion signals
+    return this.hasExplicitCompletionSignal(response);
+  }
+  
+  /**
+   * Checks for explicit completion signals.
+   */
+  private hasExplicitCompletionSignal(response: string): boolean {
+    const lowerResponse = response.toLowerCase();
+    
+    // Very explicit completion indicators
+    const strongCompletionPatterns = [
+      'task is complete', 'task completed', 'project is complete',
+      'all done', 'finished creating', 'everything is set up',
+      'application is ready', 'ready to use', 'setup complete',
+      'you can now run', 'you can now use', 'all files have been created'
+    ];
+    
+    return strongCompletionPatterns.some(pattern => lowerResponse.includes(pattern));
+  }
+  
+  /**
+   * Original completion check (now used for reference but not for auto-completion).
    */
   private isTaskComplete(response: string): boolean {
     const lowerResponse = response.toLowerCase();
@@ -241,44 +281,27 @@ export class TaskManager {
       return true;
     }
     
-    // If we have a project creation task, check for specific completion indicators
-    if (this.taskDescription.toLowerCase().includes('create') || 
-        this.taskDescription.toLowerCase().includes('build') ||
-        this.taskDescription.toLowerCase().includes('setup')) {
-      
-      // Check if response indicates all files are created and ready
-      if (lowerResponse.includes('package.json') && 
-          (lowerResponse.includes('created') || lowerResponse.includes('ready')) &&
-          !lowerResponse.includes('will') && 
-          !lowerResponse.includes('next')) {
-        return true;
-      }
-      
-      // Check if response mentions testing or running the application
-      if ((lowerResponse.includes('run') || lowerResponse.includes('test') || 
-           lowerResponse.includes('start')) && 
-          (lowerResponse.includes('npm') || lowerResponse.includes('bun') || 
-           lowerResponse.includes('yarn'))) {
-        return true;
-      }
-    }
-    
-    // If no clear continuation indicators and we have completed steps, might be done
-    if (this.completedSteps.length > 0 && 
-        !this.hasContinuationIndicators(response) &&
-        !lowerResponse.includes('will') &&
-        !lowerResponse.includes('next')) {
-      
-      // Additional check: if response is providing final instructions or summary
-      if (lowerResponse.includes('you can') || 
-          lowerResponse.includes('to run') ||
-          lowerResponse.includes('to start') ||
-          lowerResponse.includes('to test')) {
+    // For project tasks, be more careful about completion
+    if (this.isProjectCreationTask()) {
+      // Only complete if we have clear end-state indicators
+      if (lowerResponse.includes('npm start') || 
+          lowerResponse.includes('npm run') ||
+          lowerResponse.includes('you can now')) {
         return true;
       }
     }
     
     return false;
+  }
+  
+  /**
+   * Checks if this is a project creation task.
+   */
+  private isProjectCreationTask(): boolean {
+    const lowerDesc = this.taskDescription.toLowerCase();
+    return (lowerDesc.includes('create') || lowerDesc.includes('build')) &&
+           (lowerDesc.includes('project') || lowerDesc.includes('app') || 
+            lowerDesc.includes('application') || lowerDesc.includes('website'));
   }
   
   /**
@@ -307,6 +330,8 @@ export class TaskManager {
     this.toolsUsed = [];
     this.stepCount = 0;
     this.lastResponseWithoutTools = 0;
+    this.lastToolUsed = '';
+    this.consecutiveNonToolResponses = 0;
   }
   
   /**
@@ -359,25 +384,53 @@ export class TaskManager {
       return false;
     }
     
-    // Don't continue if we've hit safety limits
-    if (this.stepCount >= this.maxSteps || 
-        this.lastResponseWithoutTools >= this.maxResponsesWithoutTools) {
+    // Don't continue if we've hit hard safety limits
+    if (this.stepCount >= this.maxSteps) {
       return false;
     }
     
     const lowerResponse = response.toLowerCase();
     
-    // Don't continue if there are clear stopping indicators
-    if (this.stoppingPatterns.some(pattern => lowerResponse.includes(pattern))) {
+    // Don't continue if there are very explicit stopping indicators
+    if (this.hasExplicitCompletionSignal(response)) {
       return false;
     }
     
-    // Don't continue if task seems complete based on context
-    if (this.isTaskComplete(response)) {
-      return false;
+    // AGGRESSIVE CONTINUATION for project tasks
+    if (this.isProjectCreationTask()) {
+      // Continue if we just used a tool
+      if (toolUsed && this.continuationTools.some(tool => toolUsed.includes(tool))) {
+        return true;
+      }
+      
+      // Continue if we're in early stages (< 10 steps for complex projects)
+      if (this.stepCount < 10 && this.completedSteps.length > 0) {
+        // Continue if response suggests more work needed
+        if (lowerResponse.includes('now i') || 
+            lowerResponse.includes('next i') || 
+            lowerResponse.includes('i will') ||
+            lowerResponse.includes('let me') ||
+            lowerResponse.includes('i need to') ||
+            lowerResponse.includes('i should')) {
+          return true;
+        }
+        
+        // Continue if just created a directory but no files yet
+        if (this.lastToolUsed === 'create_directory' && 
+            !this.toolsUsed.includes('write_file')) {
+          return true;
+        }
+        
+        // Continue if created some files but probably need more
+        const fileToolsUsed = this.toolsUsed.filter(tool => 
+          tool.includes('write_file') || tool.includes('create')).length;
+        if (fileToolsUsed > 0 && fileToolsUsed < 5) {
+          return true;
+        }
+      }
     }
     
-    // If a continuation tool was just used, likely need to continue
+    // Standard continuation logic
     if (toolUsed && this.continuationTools.some(tool => toolUsed.includes(tool))) {
       return true;
     }
@@ -387,13 +440,18 @@ export class TaskManager {
       return true;
     }
     
-    // For project creation tasks, continue if we have clear next steps
-    if ((this.taskDescription.toLowerCase().includes('create') || 
-         this.taskDescription.toLowerCase().includes('build')) &&
-        this.completedSteps.length > 0 && 
-        this.completedSteps.length < 5 && // Don't go on forever
-        toolUsed) {
+    // Continue if response indicates work in progress
+    if (lowerResponse.includes('creating') ||
+        lowerResponse.includes('setting up') ||
+        lowerResponse.includes('configuring') ||
+        lowerResponse.includes('installing')) {
       return true;
+    }
+    
+    // Don't continue if we have many responses without tools AND no indication of more work
+    if (this.consecutiveNonToolResponses >= 3 && 
+        !this.hasContinuationIndicators(response)) {
+      return false;
     }
     
     return false;

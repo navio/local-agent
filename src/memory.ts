@@ -37,9 +37,27 @@ export function logUserPrompt(sessionFile: string, prompt: string) {
  *
  * @param {string} sessionFile - Path to the session file.
  * @param {string} toolName - The name of the tool used.
+ * @param {any} [toolResult] - Optional tool result for debugging.
  */
-export function logToolUsed(sessionFile: string, toolName: string) {
-  appendFileSync(sessionFile, `## Tool Used\n\n${toolName}\n\n`, "utf8");
+export function logToolUsed(sessionFile: string, toolName: string, toolResult?: any) {
+  let logEntry = `## Tool Used\n\n${toolName}\n\n`;
+  
+  // If we have tool result information, add it for debugging
+  if (toolResult) {
+    logEntry += `### Tool Result\n\n`;
+    if (toolResult.isError) {
+      logEntry += `**ERROR**: ${JSON.stringify(toolResult.result, null, 2)}\n\n`;
+    } else {
+      const result = typeof toolResult.result === 'string' 
+        ? toolResult.result.length > 500 
+          ? toolResult.result.substring(0, 500) + '\n...(truncated)'
+          : toolResult.result
+        : JSON.stringify(toolResult.result, null, 2);
+      logEntry += `**SUCCESS**: ${result}\n\n`;
+    }
+  }
+  
+  appendFileSync(sessionFile, logEntry, "utf8");
 }
 
 /**
