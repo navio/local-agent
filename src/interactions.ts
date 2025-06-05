@@ -284,9 +284,17 @@ CONTEXT AWARENESS:
           // Process response through task manager
           taskManager.processResponse(assistantResponse, toolName);
 
-          // Check if we should continue the task automatically
-          if (taskManager.shouldContinueAutomatically(assistantResponse, toolName)) {
-            console.log(`\n${YELLOW}Task continuation detected. Press Enter to continue or modify the prompt:${RESET}`);
+          // Check task completion status
+          const completionStatus = taskManager.getCompletionStatus();
+          if (completionStatus.isComplete) {
+            if (completionStatus.reason) {
+              console.log(`\n✅ ${YELLOW}Multi-step task completed (${completionStatus.reason}). Steps taken: ${completionStatus.stepCount}${RESET}`);
+            } else {
+              console.log(`\n✅ ${YELLOW}Multi-step task completed. Steps taken: ${completionStatus.stepCount}${RESET}`);
+            }
+            taskManager.resetTask();
+          } else if (taskManager.shouldContinueAutomatically(assistantResponse, toolName)) {
+            console.log(`\n${YELLOW}Task continuation detected (step ${completionStatus.stepCount}). Press Enter to continue or modify the prompt:${RESET}`);
             // Pre-populate the readline with continuation prompt
             rl.write("continue");
             rl.prompt();
@@ -310,9 +318,17 @@ CONTEXT AWARENESS:
         // Process response through task manager
         taskManager.processResponse(assistantResponse);
 
-        // Check if we should continue the task automatically
-        if (taskManager.shouldContinueAutomatically(assistantResponse)) {
-          console.log(`\n${YELLOW}Task continuation detected. Press Enter to continue or modify the prompt:${RESET}`);
+        // Check task completion status
+        const completionStatus = taskManager.getCompletionStatus();
+        if (completionStatus.isComplete) {
+          if (completionStatus.reason) {
+            console.log(`\n✅ ${YELLOW}Multi-step task completed (${completionStatus.reason}). Steps taken: ${completionStatus.stepCount}${RESET}`);
+          } else {
+            console.log(`\n✅ ${YELLOW}Multi-step task completed. Steps taken: ${completionStatus.stepCount}${RESET}`);
+          }
+          taskManager.resetTask();
+        } else if (taskManager.shouldContinueAutomatically(assistantResponse)) {
+          console.log(`\n${YELLOW}Task continuation detected (step ${completionStatus.stepCount}). Press Enter to continue or modify the prompt:${RESET}`);
           // Pre-populate the readline with continuation prompt
           rl.write("continue");
           rl.prompt();
@@ -336,6 +352,43 @@ CONTEXT AWARENESS:
   rl.on("line", async (line) => {
     const prompt = line.trim();
     if (!prompt) {
+      rl.prompt();
+      return;
+    }
+
+    // Handle special commands
+    if (prompt === "/complete" || prompt === "/done") {
+      if (taskManager.isTaskActive()) {
+        taskManager.forceComplete("Manual completion by user");
+        console.log(`✅ ${YELLOW}Task manually marked as complete.${RESET}`);
+      } else {
+        console.log(`${YELLOW}No active task to complete.${RESET}`);
+      }
+      rl.prompt();
+      return;
+    }
+    
+    if (prompt === "/status") {
+      if (taskManager.isTaskActive()) {
+        const context = taskManager.getTaskContext();
+        const status = taskManager.getCompletionStatus();
+        console.log(`\n📋 ${YELLOW}Current Task Status:${RESET}`);
+        console.log(`Task: ${context.taskDescription}`);
+        console.log(`Steps completed: ${status.stepCount}`);
+        console.log(`Completed: ${context.completedSteps.join(', ') || 'None'}`);
+        console.log(`Next steps: ${context.nextSteps.join(', ') || 'None'}`);
+      } else {
+        console.log(`${YELLOW}No active task.${RESET}`);
+      }
+      rl.prompt();
+      return;
+    }
+    
+    if (prompt === "/help") {
+      console.log(`\n${YELLOW}Available commands:${RESET}`);
+      console.log(`/complete or /done - Manually mark current task as complete`);
+      console.log(`/status - Show current task status`);
+      console.log(`/help - Show this help message`);
       rl.prompt();
       return;
     }
