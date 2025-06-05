@@ -1,4 +1,3 @@
-// interactions.ts
 /**
  * @fileoverview
  * Provides the interactive session loop and supporting utilities for the local agent.
@@ -7,114 +6,17 @@
  */
 import * as readline from "readline";
 import { createAISDKTools } from "@agentic/ai-sdk";
-// AI model providers
-import { openai } from "@ai-sdk/openai";
-import { anthropic } from "@ai-sdk/anthropic";
-import { google } from "@ai-sdk/google";
 import { generateText } from "ai";
-// OpenRouter is optional, import if available in your project
-let openrouter: any = null;
-let openrouterModule: any = null;
-try {
-  // @ts-ignore
-  openrouterModule = require("@openrouter/ai-sdk-provider");
-} catch (e) {
-  openrouterModule = null;
-}
-
-/**
- * Initializes the OpenRouter client using the current API key from environment variables.
- * Returns the client instance if successful, or null if unavailable.
- *
- * @returns {any | null} The OpenRouter client instance, or null if not configured.
- */
-function initializeOpenRouter() {
-  if (!openrouterModule) return null;
-  try {
-    return openrouterModule.createOpenRouter({
-      apiKey: process.env.OPENROUTER_API_KEY || "",
-    });
-  } catch (e) {
-    return null;
-  }
-}
-import { logToolUsed, logAgentResponse, logAgentError, logUserPrompt } from "./memory";
-import { YELLOW, RESET } from "./initialization";
-
-/**
- * Run the interactive prompt loop for the agent session.
- */
 import { marked } from "marked";
 import TerminalRenderer from "marked-terminal";
 
-/**
- * Represents a single message in the conversation history.
- * Used to track user, assistant, and system messages, including tool usage.
- */
-interface ConversationMessage {
-  role: 'user' | 'assistant' | 'system';
-  content: string;
-  timestamp: Date;
-  toolUsed?: string;
-}
-
-/**
- * Represents the context for a multi-step task.
- * Tracks task description, completed and next steps, and completion status.
- */
-interface TaskContext {
-  isMultiStep: boolean;
-  taskDescription: string;
-  completedSteps: string[];
-  nextSteps: string[];
-  isComplete: boolean;
-}
-
-/**
- * Parses a model string to extract the provider and model name.
- * Supports formats like "openai/gpt-4" or just "gpt-4" (defaults to OpenAI).
- *
- * @param {string} modelString - The model string to parse.
- * @returns {{ provider: string, modelName: string }} The provider and model name.
- */
-function parseModelString(modelString: string): { provider: string, modelName: string } {
-  if (!modelString.includes("/")) {
-    // Backward compatibility: treat as openai
-    return { provider: "openai", modelName: modelString };
-  }
-  const [provider, ...rest] = modelString.split("/");
-  return { provider: provider.toLowerCase(), modelName: rest.join("/") };
-}
-
-/**
- * Returns the appropriate model client function for the specified provider.
- * Supports OpenAI, Anthropic, Google, and OpenRouter.
- *
- * @param {string} provider - The AI provider name (e.g., "openai", "anthropic").
- * @returns {(modelName: string) => any} Function to get the model instance for the provider.
- * @throws {Error} If the provider is unsupported or not configured.
- */
-function getClientForProvider(provider: string): ((modelName: string) => any) {
-  switch (provider) {
-    case "openai":
-      return openai;
-    case "anthropic":
-      return anthropic;
-    case "google":
-      return google;
-    // "custom" provider is not supported due to missing SDK export
-    case "custom":
-      throw new Error("The 'custom' provider is not supported: no implementation available in the current SDK.");
-    case "openrouter":
-      // Initialize OpenRouter client with current API key
-      openrouter = initializeOpenRouter();
-      if (!openrouter) throw new Error("OpenRouter client not available or not configured. Make sure you have the @openrouter/ai-sdk-provider package installed and OPENROUTER_API_KEY set.");
-      // OpenRouter supports both chat and completion models, but for simplicity, use .chat for now
-      return (modelName: string) => openrouter.chat(modelName);
-    default:
-      throw new Error(`Unsupported AI provider: ${provider}`);
-  }
-}
+// Import new simplified systems
+import { ProviderFactory, ProviderError } from "./providers";
+import { TaskManager } from "./tasks";
+import { handleError } from "./errors";
+import { ConversationMessage } from "./types";
+import { logToolUsed, logAgentResponse, logAgentError, logUserPrompt } from "./memory";
+import { YELLOW, RESET } from "./initialization";
 
 /**
  * Starts and manages the interactive agent session in the terminal.
@@ -126,7 +28,7 @@ function getClientForProvider(provider: string): ((modelName: string) => any) {
  * @param {string} sessionFile - Path to the session memory log file.
  * @param {string} agentName - The display name of the agent.
  */
-export function runInteractiveSession(config: any, loadedTools: Record<string, any>, sessionFile: string, agentName: string) {
+export function runInteractiveSession(config: any, loadedTools: Record<string, any>, sessionFile: string, agentName: string, keys: Record<string, string> = {}) {
   const BLUE = "\x1b[34m";
   const RESET = "\x1b[0m";
   const rl = readline.createInterface({
@@ -140,9 +42,9 @@ export function runInteractiveSession(config: any, loadedTools: Record<string, a
     renderer: new TerminalRenderer()
   });
 
-  // Conversation history and task context
+  // Conversation history and task management
   const conversationHistory: ConversationMessage[] = [];
-  let currentTaskContext: TaskContext | null = null;
+  const taskManager = new TaskManager();
 
   // Enhanced system prompt for multi-step task handling
   const enhancedSystemPrompt = `${config.system}
@@ -172,22 +74,6 @@ CONTEXT AWARENESS:
   rl.prompt();
 
   /**
-   * Determines if a user prompt describes a multi-step task (e.g., project creation).
-   *
-   * @param {string} prompt - The user prompt to analyze.
-   * @returns {boolean} True if the prompt is likely a multi-step task, false otherwise.
-   */
-  function isMultiStepTask(prompt: string): boolean {
-    const multiStepKeywords = [
-      'create', 'build', 'setup', 'make', 'develop', 'implement', 'generate',
-      'react app', 'project', 'application', 'website', 'api', 'server',
-      'all files', 'complete', 'full', 'entire', 'whole'
-    ];
-    const lowerPrompt = prompt.toLowerCase();
-    return multiStepKeywords.some(keyword => lowerPrompt.includes(keyword));
-  }
-
-  /**
    * Builds a string representation of recent conversation history and current task context.
    * Used to provide context to the language model for more coherent responses.
    *
@@ -207,63 +93,16 @@ CONTEXT AWARENESS:
       }
     });
     
-    if (currentTaskContext && !currentTaskContext.isComplete) {
+    // Get current task context from the task manager
+    if (taskManager.isTaskActive()) {
+      const taskContext = taskManager.getTaskContext();
       context += `\nCURRENT TASK CONTEXT:\n`;
-      context += `Task: ${currentTaskContext.taskDescription}\n`;
-      context += `Completed Steps: ${currentTaskContext.completedSteps.join(', ')}\n`;
-      context += `Next Steps: ${currentTaskContext.nextSteps.join(', ')}\n`;
+      context += `Task: ${taskContext.taskDescription}\n`;
+      context += `Completed Steps: ${taskContext.completedSteps.join(', ')}\n`;
+      context += `Next Steps: ${taskContext.nextSteps.join(', ')}\n`;
     }
     
     return context;
-  }
-
-  /**
-   * Determines if the agent should automatically continue a multi-step task based on the last response or tool used.
-   *
-   * @param {string} response - The assistant's last response.
-   * @param {string} [toolUsed] - The name of the tool used, if any.
-   * @returns {boolean} True if the task should continue automatically, false if complete.
-   */
-  function shouldContinueTask(response: string, toolUsed?: string): boolean {
-    if (!currentTaskContext || currentTaskContext.isComplete) return false;
-    
-    const continuationIndicators = [
-      'created folder', 'created directory', 'made folder',
-      'next step', 'continue', 'now i will', 'now i need to',
-      'partially complete', 'still need', 'remaining',
-      'created basic', 'initial setup', 'first step',
-      'proceeding', 'moving on', 'next logical step',
-      'will now', 'let me', 'i will create', 'i will add',
-      'setting up', 'configuring', 'installing'
-    ];
-    
-    const completionIndicators = [
-      'task complete', 'finished', 'done', 'ready to use',
-      'fully functional', 'all files created', 'project is complete',
-      'successfully created', 'everything is set up',
-      'application is now ready', 'setup is complete',
-      'all necessary files', 'ready to run'
-    ];
-    
-    const lowerResponse = response.toLowerCase();
-    
-    // Check for completion indicators first
-    if (completionIndicators.some(indicator => lowerResponse.includes(indicator))) {
-      currentTaskContext.isComplete = true;
-      return false;
-    }
-    
-    // Special logic for specific tools that typically indicate continuation
-    if (toolUsed) {
-      const continuationTools = ['create_directory', 'write_file'];
-      if (continuationTools.some(tool => toolUsed.includes(tool))) {
-        // If we just created a directory or wrote a file, likely need to continue
-        return true;
-      }
-    }
-    
-    // Check for continuation indicators
-    return continuationIndicators.some(indicator => lowerResponse.includes(indicator));
   }
 
   /**
@@ -287,14 +126,8 @@ CONTEXT AWARENESS:
       });
 
       // Detect if this is a new multi-step task
-      if (isMultiStepTask(prompt)) {
-        currentTaskContext = {
-          isMultiStep: true,
-          taskDescription: prompt,
-          completedSteps: [],
-          nextSteps: [],
-          isComplete: false
-        };
+      if (taskManager.isMultiStepTask(prompt)) {
+        taskManager.startTask(prompt);
       }
     }
 
@@ -322,20 +155,24 @@ CONTEXT AWARENESS:
       // Build the full prompt with conversation context
       const contextualPrompt = prompt + buildConversationContext();
 
-      // Dynamically select provider and model
+      // Dynamically select provider and model using the factory
       let model;
       try {
-        const { provider, modelName } = parseModelString(config.model);
-        const client = getClientForProvider(provider);
-        model = client(modelName);
+        // Get model from the factory (handles parsing, provider loading, and initialization)
+        model = await ProviderFactory.getModelFromString(config.model, keys);
       } catch (err) {
         spinnerActive = false;
         clearInterval(spinnerInterval);
         process.stdout.clearLine(0);
         process.stdout.cursorTo(0);
-        const errMsg = err instanceof Error ? err.message : String(err);
-        console.error(`Error: ${errMsg}`);
-        logAgentError(sessionFile, errMsg);
+        
+        // Specific error handling for provider errors
+        if (err instanceof ProviderError) {
+          handleError(err, 'model selection');
+        } else {
+          handleError(err, 'model initialization');
+        }
+        
         if (!isAutoContinuation) {
           rl.prompt();
         }
@@ -395,6 +232,8 @@ CONTEXT AWARENESS:
           toolSpinnerIndex = (toolSpinnerIndex + 1) % toolSpinnerFrames.length;
         }, 100);
 
+        // Record tool usage in task manager
+        taskManager.recordToolUse(toolName, toolResultObj);
         logToolUsed(sessionFile, toolName);
 
         try {
@@ -402,16 +241,12 @@ CONTEXT AWARENESS:
           // Use the same dynamic model selection for summary
           let summaryModel;
           try {
-            const { provider, modelName } = parseModelString(config.model);
-            const client = getClientForProvider(provider);
-            summaryModel = client(modelName);
+            summaryModel = await ProviderFactory.getModelFromString(config.model, keys);
           } catch (err) {
             clearInterval(toolSpinnerInterval);
             process.stdout.clearLine(0);
             process.stdout.cursorTo(0);
-            const errMsg = err instanceof Error ? err.message : String(err);
-            console.error(`Error: ${errMsg}`);
-            logAgentError(sessionFile, errMsg);
+            handleError(err, 'summary model selection');
             return;
           }
           const summaryResult = await generateText({
@@ -446,13 +281,11 @@ CONTEXT AWARENESS:
             toolUsed: toolName
           });
 
-          // Update task context
-          if (currentTaskContext && !currentTaskContext.isComplete) {
-            currentTaskContext.completedSteps.push(`Used ${toolName}: ${assistantResponse.substring(0, 100)}...`);
-          }
+          // Process response through task manager
+          taskManager.processResponse(assistantResponse, toolName);
 
           // Check if we should continue the task automatically
-          if (shouldContinueTask(assistantResponse, toolName)) {
+          if (taskManager.shouldContinueAutomatically(assistantResponse, toolName)) {
             console.log(`\n${YELLOW}Task continuation detected. Press Enter to continue or modify the prompt:${RESET}`);
             // Pre-populate the readline with continuation prompt
             rl.write("continue");
@@ -464,9 +297,7 @@ CONTEXT AWARENESS:
           clearInterval(toolSpinnerInterval);
           process.stdout.clearLine(0);
           process.stdout.cursorTo(0);
-          const errMsg = err instanceof Error ? err.message : String(err);
-          console.error(`Error: ${errMsg}`);
-          logAgentError(sessionFile, errMsg);
+          handleError(err, 'tool summary generation');
         }
       } else if (assistantResponse) {
         // Add to conversation history for non-tool responses
@@ -476,8 +307,11 @@ CONTEXT AWARENESS:
           timestamp: new Date()
         });
 
+        // Process response through task manager
+        taskManager.processResponse(assistantResponse);
+
         // Check if we should continue the task automatically
-        if (shouldContinueTask(assistantResponse)) {
+        if (taskManager.shouldContinueAutomatically(assistantResponse)) {
           console.log(`\n${YELLOW}Task continuation detected. Press Enter to continue or modify the prompt:${RESET}`);
           // Pre-populate the readline with continuation prompt
           rl.write("continue");
@@ -490,9 +324,7 @@ CONTEXT AWARENESS:
       clearInterval(spinnerInterval);
       process.stdout.clearLine(0);
       process.stdout.cursorTo(0);
-      const errMsg = err instanceof Error ? err.message : String(err);
-      console.error(`Error: ${errMsg}`);
-      logAgentError(sessionFile, errMsg);
+      handleError(err, 'text generation');
     }
 
     // Only prompt for next input if we're not auto-continuing

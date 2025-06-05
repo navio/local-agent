@@ -6,6 +6,17 @@
 import { z } from "zod";
 
 /**
+ * Represents a single message in the conversation history.
+ * Used to track user, assistant, and system messages, including tool usage.
+ */
+export interface ConversationMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp: Date;
+  toolUsed?: string;
+}
+
+/**
  * Parameters for generating text using the AI SDK.
  * Used to configure model, tools, temperature, and prompt for text generation.
  */
