@@ -1,6 +1,6 @@
 {
   "name": "local-agent",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "A CLI agentic system for orchestrating tools and memory with per-folder scoping",
   "main": "dist/cli.js",
   "bin": {
