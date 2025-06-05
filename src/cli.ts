@@ -134,8 +134,8 @@ async function main() {
   toolStatusMd += "\n";
   const sessionFile = createSessionFile(now, toolRow, toolStatusMd, agentName);
 
-  // Pass all loaded tools to the session
-  runInteractiveSession(config, loadedTools, sessionFile, agentName);
+  // Pass all loaded tools and keys to the session
+  runInteractiveSession(config, loadedTools, sessionFile, agentName, keys);
 }
 
 main();

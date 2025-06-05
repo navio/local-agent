@@ -5,16 +5,12 @@
  * and loading of Model Context Protocol (MCP) tools for agent operation.
  * All log messages use the prefix [local-agent] for consistency and clarity.
  */
-import { existsSync, mkdirSync, writeFileSync, readFileSync } from "fs";
+import { existsSync, mkdirSync, writeFileSync } from "fs";
 import { DEFAULT_CONFIG, DEFAULT_TOOLS, DEFAULT_KEYS } from "./default-configs";
-import {
-  GenerateTextParamsSchema,
-  ToolsJson,
-  ToolsJsonSchema,
-  KeysJson,
-  KeysJsonSchema
-} from "./types";
+import { ToolsJson, KeysJson } from "./types";
 import { createMcpTools } from "@agentic/mcp";
+import { ConfigService } from "./config";
+import { handleError, ConfigurationError } from "./errors";
 
 /**
  * Checks for missing required files and the memory directory in the project.
@@ -107,29 +103,28 @@ export async function validateAndLoadFiles(REQUIRED_FILES: string[], MEMORY_DIR:
     return undefined as any;
   }
 
-  let config: ReturnType<typeof GenerateTextParamsSchema['parse']>;
+  let config: any;
   let tools: ToolsJson;
   let keys: KeysJson;
 
   try {
-    config = GenerateTextParamsSchema.parse(JSON.parse(readFileSync("local-agent.json", "utf8")));
+    config = ConfigService.loadConfig("local-agent.json");
   } catch (err) {
-    console.error("[local-agent] Invalid local-agent.json:", err);
+    handleError(err, 'loading configuration');
     process.exit(1);
   }
 
   try {
-    const toolsData = JSON.parse(readFileSync("mcp-tools.json", "utf8"));
-    tools = ToolsJsonSchema.parse(toolsData);
+    tools = ConfigService.loadTools("mcp-tools.json");
   } catch (err) {
-    console.error("[local-agent] Invalid mcp-tools.json:", err);
+    handleError(err, 'loading tools configuration');
     process.exit(1);
   }
 
   try {
-    keys = KeysJsonSchema.parse(JSON.parse(readFileSync("keys.json", "utf8")));
+    keys = ConfigService.loadKeys("keys.json");
   } catch (err) {
-    console.error("[local-agent] Invalid keys.json:", err);
+    handleError(err, 'loading keys configuration');
     process.exit(1);
   }
 
