@@ -170,11 +170,6 @@ CONTEXT AWARENESS:
 
   console.log(`Type your prompt for ${agentName} (Ctrl+C to exit):`);
   rl.prompt();
-  // Set the prompt color for user input (using type assertion for private property)
-  (rl as any)._writeToOutput = function (stringToWrite: string) {
-    // Always write user input in blue
-    ((rl as any).output as NodeJS.WriteStream).write(BLUE + stringToWrite + RESET);
-  };
 
   /**
    * Determines if a user prompt describes a multi-step task (e.g., project creation).
