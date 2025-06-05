@@ -13,6 +13,12 @@ import TerminalRenderer from "marked-terminal";
 // Import new simplified systems
 import { ProviderFactory, ProviderError } from "./providers";
 import { TaskManager } from "./tasks";
+
+// Debug logging utility
+const isDebug = process.argv.includes('--debug');
+function debugLog(...args: any[]) {
+  if (isDebug) console.log(...args);
+}
 import { handleError } from "./errors";
 import { ConversationMessage } from "./types";
 import { logToolUsed, logAgentResponse, logAgentError, logUserPrompt } from "./memory";
@@ -225,7 +231,7 @@ CONTEXT AWARENESS:
       let hasToolCalls = false;
 
       // Debug: Log the full result structure to understand what we're getting
-      console.log(`\n[DEBUG] Result structure:`, JSON.stringify({
+      debugLog(`\n[DEBUG] Result structure:`, JSON.stringify({
         text: result.text ? `"${result.text.substring(0, 100)}..."` : result.text,
         toolCalls: result.toolCalls ? result.toolCalls.length : 0,
         toolResults: result.toolResults ? result.toolResults.length : 0,
@@ -237,7 +243,7 @@ CONTEXT AWARENESS:
         hasToolCalls = true;
         const toolCall = result.toolCalls[0]; // Get first tool call
         toolName = toolCall.toolName;
-        console.log(`\n[DEBUG] Tool call detected: ${toolName} with args:`, JSON.stringify(toolCall.args, null, 2));
+        debugLog(`\n[DEBUG] Tool call detected: ${toolName} with args:`, JSON.stringify(toolCall.args, null, 2));
       }
 
       // Check for tool results
@@ -245,11 +251,11 @@ CONTEXT AWARENESS:
         toolResultObj = result.toolResults[0]; // Get first tool result
         if (toolResultObj) {
           toolName = toolResultObj.toolName || toolName || "unknown-tool";
-          console.log(`\n[DEBUG] Tool result received for ${toolName}:`, JSON.stringify({
+          debugLog(`\n[DEBUG] Tool result received for ${toolName}:`, JSON.stringify({
             type: toolResultObj.type,
             isError: toolResultObj.isError,
-            result: typeof toolResultObj.result === 'string' ? 
-              toolResultObj.result.substring(0, 200) + '...' : 
+            result: typeof toolResultObj.result === 'string' ?
+              toolResultObj.result.substring(0, 200) + '...' :
               toolResultObj.result
           }, null, 2));
         }
